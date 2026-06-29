@@ -1,50 +1,45 @@
 import os
+import sys
 import telebot
 from flask import Flask, request
 from dotenv import load_dotenv
+
+# Parent Directory (ပင်မ Folder) ကို လမ်းကြောင်းထဲ ထည့်သွင်းခြင်း
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.database import get_db_connection
 
 load_dotenv()
 
 API_TOKEN = os.getenv('BOT_TOKEN')
 RENDER_URL = os.getenv('RENDER_EXTERNAL_URL')
-BOT_USERNAME = os.getenv('BOT_USERNAME') # Telegram Bot ၏ Username (ဥပမာ - my_shop_bot)
+BOT_USERNAME = os.getenv('BOT_USERNAME')
 
 bot = telebot.TeleBot(API_TOKEN, threaded=False)
 app = Flask(__name__)
 
-# --- START COMMAND ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     user_id = message.from_user.id
     username = message.from_user.username
     full_name = message.from_user.full_name
     
-    # Referral Code ပါ၊ မပါ စစ်ဆေးခြင်း (ဥပမာ - /start 12345678)
     referred_by = None
     command_args = message.text.split()
     if len(command_args) > 1:
         try:
             possible_referrer = int(command_args[1])
-            if possible_referrer != user_id: # မိမိကိုယ်မိမိ ပြန်ညွှန်း၍မရစေရန်
+            if possible_referrer != user_id:
                 referred_by = possible_referrer
         except ValueError:
             pass
 
-    # User ကို Database ထဲ သိမ်းဆည်းခြင်း (သို့မဟုတ် ရှိပြီးသားဆိုလျှင် update လုပ်ခြင်း)
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # အသစ်ဖြစ်ပါက ထည့်မည်၊ ရှိပြီးသားဆိုလျှင် မပြောင်းလဲပါ
     cursor.execute('''
         INSERT INTO users (user_id, username, full_name) 
         VALUES (%s, %s, %s) 
         ON CONFLICT (user_id) DO NOTHING;
     ''', (user_id, username, full_name))
-    
-    # အကယ်၍ အော်ဒါစားပွဲတွင် Referred By ကို မှတ်တမ်းတင်လိုပါက ဤနေရာတွင် User Table ၌ပါ ထည့်သွင်းသိမ်းဆည်းနိုင်ပါသည်
-    # (မှတ်ချက် - နောက်ပိုင်း အော်ဒါတင်ချိန်တွင် လွယ်ကူစေရန် Orders Table တွင်လည်း referred_by ပါဝင်ပြီးဖြစ်သည်)
-    
     conn.commit()
     cursor.close()
     conn.close()
@@ -59,7 +54,6 @@ def send_welcome(message):
     
     bot.reply_to(message, f"👋 မင်္ဂလာပါ {full_name}!\nဘက်စုံသုံး Online Store မှ ကြိုဆိုပါတယ်။\n\nပစ္စည်းများကို စျေးနှုန်းချိုသာစွာဖြင့် ဝယ်ယူနိုင်သလို၊ သူငယ်ချင်းများကို လင့်ခ်မျှဝေပြီး ကော်မရှင်ခ (Affiliate Bonus) ရှာဖွေနိုင်ပါတယ်ဗျာ။", reply_markup=markup)
 
-# --- CALLBACK QUERY HANDLERS ---
 @bot.callback_query_handler(func=lambda call: True)
 def callback_listener(call):
     user_id = call.from_user.id
@@ -100,7 +94,6 @@ def callback_listener(call):
         bot.answer_callback_query(call.id, text=f"{category_name} ပစ္စည်းစာရင်းကို ရှာဖွေနေပါသည်...")
 
     elif call.data == "agent_panel":
-        # Agent / Affiliate ပြခန်း စနစ်
         referral_link = f"https://t.me{BOT_USERNAME}?start={user_id}"
         
         conn = get_db_connection()
@@ -129,7 +122,6 @@ def callback_listener(call):
                               text=agent_text, parse_mode="Markdown", reply_markup=markup)
 
     elif call.data == "my_wallet":
-        # ကိုယ်ပိုင် ပိုက်ဆံအိတ်စနစ် (Wallet)
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT balance FROM users WHERE user_id = %s;", (user_id,))
@@ -140,7 +132,7 @@ def callback_listener(call):
         balance = user_data['balance'] if user_data else 0.0
         
         markup = telebot.types.InlineKeyboardMarkup()
-        btn_deposit = telebot.types.InlineKeyboardButton("💳 ငွေဖြည့်သွင်းရန်", callback_data="deposit_money")
+        btn_deposit = telebot.types.InlineKeyboardButton("💳 Ngwe Phyi Yan", callback_data="deposit_money")
         btn_back = telebot.types.InlineKeyboardButton("🔙 ပင်မမီနူးသို့", callback_data="back_to_main")
         markup.add(btn_deposit)
         markup.add(btn_back)
@@ -169,7 +161,6 @@ def callback_listener(call):
                               text=f"👋 ပင်မစာမျက်နှာသို့ ပြန်ရောက်ပါပြီ။\n\nပစ္စည်းများကို စျေးနှုန်းချိုသာစွာဖြင့် ဝယ်ယူနိုင်သလို၊ သူငယ်ချင်းများကို လင့်ခ်မျှဝေပြီး ကော်မရှင်ခ ရှာဖွေနိုင်ပါတယ်ဗျာ။", 
                               reply_markup=markup)
 
-# --- WEBHOOK SERVER ROUTING ---
 @app.route('/' + API_TOKEN, methods=['POST'])
 def getMessage():
     json_string = request.get_data().decode('utf-8')
