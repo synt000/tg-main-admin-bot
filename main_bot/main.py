@@ -1,26 +1,20 @@
-@bot.message_handler(content_types=['photo'])
-def payment_proof(m):
-    try:
-        file_id = m.photo[-1].file_id
-        caption = m.caption or ""
+from database.database import 
+check_vip
 
-        parts = caption.split()
+@bot.message_handler(commands=['vip'])
+def vip_status(m):
+    data = check_vip(m.from_user.id)
 
-        # format: /pay ORDER_ID
-        if len(parts) < 2:
-            bot.reply_to(m, "❌ Use caption: /pay ORDER_ID")
-            return
+    if not data:
+        bot.reply_to(m, "❌ You are not VIP")
+        return
 
-        order_id = parts[1]
+    plan, expires, status = data
 
-        # SAVE PAYMENT
-        from database.database import add_payment
-        add_payment(m.from_user.id, order_id, file_id)
-
-        bot.reply_to(
-            m,
-            "✅ Payment received\n⏳ Waiting admin approval"
-        )
-
-    except:
-        bot.reply_to(m, "❌ Payment error")
+    bot.reply_to(
+        m,
+        f"👑 VIP STATUS\n\n"
+        f"📦 Plan: {plan}\n"
+        f"📅 Expires: {expires}\n"
+        f"📌 Status: {status}"
+    )
