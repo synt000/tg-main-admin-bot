@@ -6,16 +6,19 @@ from core.database import get_db_connection
 
 load_dotenv()
 
-ADMIN_TOKEN = os.getenv('ADMIN_BOT_TOKEN') # အက်ဒမင်ဘော့အတွက် သီးသန့်တိုကင်
+ADMIN_TOKEN = os.getenv('ADMIN_BOT_TOKEN')
 RENDER_URL = os.getenv('RENDER_EXTERNAL_URL')
 
 bot = telebot.TeleBot(ADMIN_TOKEN, threaded=False)
 app = Flask(__name__)
 
-# အက်ဒမင်ဖြစ်ကြောင်း စစ်ဆေးရန် (မိုင်ခရိုဆော့ဖ် သို့မဟုတ် env ထဲက ID စစ်နိုင်သည်)
-ADMIN_IDS = [int(x) for x in os.getenv('ADMIN_IDS', '').split(',') if x]
+# Environment Variable မရှိလျှင် Empty List ဖြစ်အောင် ပြင်ဆင်ခြင်း (Error ကာကွယ်ရန်)
+admin_env = os.getenv('ADMIN_IDS')
+if admin_env:
+    ADMIN_IDS = [int(x) for x in admin_env.split(',') if x.strip().isdigit()]
+else:
+    ADMIN_IDS = []
 
-# စာရိုက်ဆင့်ကဲစနစ် (FSM) အတွက် ယာယီဒေတာသိမ်းရန်
 admin_states = {}
 
 def is_admin(user_id):
@@ -45,7 +48,6 @@ def admin_callbacks(call):
     if not is_admin(user_id): return
     
     if call.data == "admin_add_product":
-        # အဆင့် (၁) - Category ရွေးခိုင်းခြင်း
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton("📱 Digital Accounts", callback_data="setcat_Digital"))
         markup.add(telebot.types.InlineKeyboardButton("👕 အဝတ်အထည်နှင့် ဖက်ရှင်", callback_data="setcat_Clothes"))
@@ -91,10 +93,8 @@ def process_product_image(message):
     user_id = message.from_user.id
     state = admin_states[user_id]
     
-    # Telegram ပေါ်က အကြည်ဆုံးပုံ ID ကို ယူခြင်း
     file_id = message.photo[-1].file_id
     
-    # Database ထဲသို့ ပစ္စည်းအချက်အလက်များ သိမ်းဆည်းခြင်း
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
@@ -105,9 +105,7 @@ def process_product_image(message):
     cursor.close()
     conn.close()
     
-    # State ကို ပိတ်သိမ်းခြင်း
     del admin_states[user_id]
-    
     bot.reply_to(message, f"✅ **ပစ္စည်းအသစ် တင်ပြီးမြောက်ပါပြီ။**\n\nဝယ်သူများဘက်ခြမ်း Bot တွင် ယခုပစ္စည်းကို ချက်ချင်း ဝယ်ယူနိုင်ပါပြီခင်ဗျာ။")
 
 # --- WEBHOOK SERVER ROUTING ---
@@ -125,5 +123,5 @@ def admin_webhook():
     return "Admin Bot Webhook Status: ACTIVE", 200
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001)) # ကွဲပြားသော Port တစ်ခုခုဖြင့် Run မည်
+    port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)
