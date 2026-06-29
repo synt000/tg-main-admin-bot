@@ -29,13 +29,13 @@ app = Flask(__name__)
 def home():
     return "E-Commerce Multi-Bot System Server is Running ✅", 200
 
-# --- 🛒 ၁။ MAIN BOT WEBHOOK ROUTE ---
-@app.route("/webhook", methods=['POST'])
+# --- 🛒 ၁။ MAIN BOT ROUTE (အမည်သစ်) ---
+@app.route("/webhook-main", methods=['POST'])
 def main_webhook():
     if request.headers.get('content-type') == 'application/json':
         json_string = request.get_data().decode('utf-8')
         
-        # 🔍 Debug Log: Main Bot ဆီ Update ဝင်လာသမျှကို ကြည့်ရန်
+        # Debug Log
         update_dict = json.loads(json_string)
         print(f"🔥 MAIN UPDATE: {json.dumps(update_dict, indent=2)}")
         
@@ -45,13 +45,13 @@ def main_webhook():
     else:
         return "Invalid Content-Type", 400
 
-# --- ⚙️ ၂။ ADMIN BOT WEBHOOK ROUTE ---
-@app.route("/admin-webhook", methods=['POST'])
+# --- ⚙️ ၂။ ADMIN BOT ROUTE (အမည်သစ်) ---
+@app.route("/webhook-admin", methods=['POST'])
 def admin_webhook():
     if request.headers.get('content-type') == 'application/json':
         json_string = request.get_data().decode('utf-8')
         
-        # 🔍 Debug Log: Admin Bot ဆီ Update ဝင်လာသမျှကို ကြည့်ရန်
+        # Debug Log
         update_dict = json.loads(json_string)
         print(f"🔥 ADMIN UPDATE: {json.dumps(update_dict, indent=2)}")
         
