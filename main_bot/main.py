@@ -6,6 +6,10 @@ from telebot import types
 
 from core.config import MAIN_BOT_TOKEN
 from database.database import add_user, add_order
+from database.init_db import init_db
+
+# Database ကို အလိုအလျောက် ဖန်တီး
+init_db()
 
 bot = telebot.TeleBot(MAIN_BOT_TOKEN)
 
