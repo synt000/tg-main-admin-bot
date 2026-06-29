@@ -1,11 +1,9 @@
-# PAYMENTS
 cur.execute("""
-CREATE TABLE IF NOT EXISTS payments (
+CREATE TABLE IF NOT EXISTS vip_users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    order_id TEXT,
-    proof TEXT,
-    status TEXT DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    user_id INTEGER UNIQUE,
+    plan TEXT,
+    expires_at TEXT,
+    status TEXT DEFAULT 'active'
 )
 """)
