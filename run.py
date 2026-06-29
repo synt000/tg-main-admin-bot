@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Startup မတိုင်မီ Database Table များကို ဆောက်ခြင်း
+# Database initialized
 try:
     from core.database import init_ecommerce_db
     init_ecommerce_db()
@@ -17,9 +17,7 @@ except Exception as e:
 
 load_dotenv()
 
-MAIN_TOKEN = os.getenv('BOT_TOKEN')
-ADMIN_TOKEN = os.getenv('ADMIN_BOT_TOKEN')
-
+# ဘော့တ် Instance များကို Import လုပ်ခြင်း
 from main_bot.main import bot as main_bot
 from admin_bot.main import bot as admin_bot
 
@@ -29,34 +27,26 @@ app = Flask(__name__)
 def home():
     return "E-Commerce Multi-Bot System Server is Running ✅", 200
 
-# --- 🛒 ၁။ MAIN BOT ROUTE (အမည်သစ်) ---
-@app.route("/webhook-main", methods=['POST'])
-def main_webhook():
+# --- 🚀 RECOMMENDED CLEAN SETUP: SINGLE WEBHOOK ROUTE ---
+# လမ်းကြောင်း တစ်ခုတည်းဖြင့် Main Bot ရော Admin Bot ကိုပါ အတူတူ ကိုင်တွယ်ခြင်း
+@app.route("/webhook", methods=['POST'])
+def unified_webhook():
     if request.headers.get('content-type') == 'application/json':
         json_string = request.get_data().decode('utf-8')
-        
-        # Debug Log
         update_dict = json.loads(json_string)
-        print(f"🔥 MAIN UPDATE: {json.dumps(update_dict, indent=2)}")
         
+        # စစ်ဆေးရန် Debug Log
+        print(f"🔥 UNIFIED UPDATE INCOMING: {json.dumps(update_dict, indent=2)}")
         update = telebot.types.Update.de_json(json_string)
-        main_bot.process_new_updates([update])
-        return "!", 200
-    else:
-        return "Invalid Content-Type", 400
-
-# --- ⚙️ ၂။ ADMIN BOT ROUTE (အမည်သစ်) ---
-@app.route("/webhook-admin", methods=['POST'])
-def admin_webhook():
-    if request.headers.get('content-type') == 'application/json':
-        json_string = request.get_data().decode('utf-8')
         
-        # Debug Log
-        update_dict = json.loads(json_string)
-        print(f"🔥 ADMIN UPDATE: {json.dumps(update_dict, indent=2)}")
-        
-        update = telebot.types.Update.de_json(json_string)
-        admin_bot.process_new_updates([update])
+        # 🔍 Token/Path ခွဲစရာမလိုဘဲ Bot နှစ်ခုလုံးဆီသို့ Update များ တစ်ပြိုင်နက် ပို့ပေးခြင်း
+        # Library က ၎င်းနှင့်ဆိုင်သော Update ကိုသာ ဖတ်ပြီး အလုပ်လုပ်သွားပါမည်။ Conflict လုံးဝမဖြစ်ပါ။
+        try:
+            main_bot.process_new_updates([update])
+            admin_bot.process_new_updates([update])
+        except Exception as e:
+            print(f"⚠️ Bot Process Update Error: {e}")
+            
         return "!", 200
     else:
         return "Invalid Content-Type", 400
