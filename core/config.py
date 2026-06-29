@@ -1,19 +1,29 @@
-import os
-from dotenv import load_dotenv
+import sqlite3
+from core.config import DATABASE
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ENV_PATH = os.path.join(BASE_DIR, ".env")
+def connect():
+    return sqlite3.connect(DATABASE)
 
-load_dotenv(ENV_PATH)
+def add_user(user_id, username, first_name):
+    conn = connect()
+    cur = conn.cursor()
 
-MAIN_BOT_TOKEN = os.getenv("MAIN_BOT_TOKEN")
-ADMIN_BOT_TOKEN = os.getenv("ADMIN_BOT_TOKEN")
-OWNER_ID = int(os.getenv("OWNER_ID", 0))
-DATABASE = os.getenv("DATABASE")
+    cur.execute("""
+    INSERT OR IGNORE INTO users (user_id, username, first_name)
+    VALUES (?, ?, ?)
+    """, (user_id, username, first_name))
 
-# 🔥 safety check
-if not MAIN_BOT_TOKEN:
-    raise Exception("MAIN_BOT_TOKEN missing in .env")
+    conn.commit()
+    conn.close()
 
-if not ADMIN_BOT_TOKEN:
-    raise Exception("ADMIN_BOT_TOKEN missing in .env")
+def add_order(user_id, product, amount):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO orders (user_id, product, amount)
+    VALUES (?, ?, ?)
+    """, (user_id, product, amount))
+
+    conn.commit()
+    conn.close()
