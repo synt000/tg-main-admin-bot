@@ -58,14 +58,16 @@ def products(message):
     )
 
 # =====================
-# WEBHOOK
+# WEBHOOK (FIXED)
 # =====================
-@app.route(f"/webhook/{MAIN_BOT_TOKEN}", methods=["POST"])
+@app.route("/webhook", methods=["POST"])
 def webhook():
-    json_str = request.get_data().decode("UTF-8")
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return "OK", 200
+    if request.headers.get("content-type") == "application/json":
+        json_str = request.get_data().decode("UTF-8")
+        update = telebot.types.Update.de_json(json_str)
+        bot.process_new_updates([update])
+        return "OK", 200
+    return "INVALID", 400
 
 # =====================
 # HEALTH CHECK
@@ -75,7 +77,7 @@ def home():
     return "Bot is running 🚀"
 
 # =====================
-# RENDER SAFE START
+# RUN (RENDER SAFE)
 # =====================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
