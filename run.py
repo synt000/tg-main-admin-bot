@@ -1,5 +1,10 @@
-import threading
+import sys
 import os
+
+# Python ရှာဖွေမည့် လမ်းကြောင်းထဲသို့ လက်ရှိ ပင်မ Directory ကို ထည့်သွင်းခြင်း
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+import threading
 from main_bot.main import app as user_app
 from admin_bot.main import app as admin_app
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
