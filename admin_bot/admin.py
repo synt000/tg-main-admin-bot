@@ -1,10 +1,15 @@
-import sys, os
+import sys
+import os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import telebot
 from core.config import ADMIN_BOT_TOKEN, OWNER_ID
 from database.database import connect
 
+# =====================
+# BOT INIT
+# =====================
 bot = telebot.TeleBot(ADMIN_BOT_TOKEN)
 
 # =====================
@@ -19,13 +24,12 @@ def is_owner(uid):
 @bot.message_handler(commands=['start'])
 def start(m):
     if not is_owner(m.from_user.id):
-        bot.reply_to(m, "⛔ Access Denied")
-        return
+        return bot.reply_to(m, "⛔ Access Denied")
 
     bot.reply_to(m, "👑 Admin Panel Ready 🚀")
 
 # =====================
-# USERS
+# USERS LIST
 # =====================
 @bot.message_handler(commands=['users'])
 def users(m):
@@ -34,8 +38,10 @@ def users(m):
 
     conn = connect()
     cur = conn.cursor()
+
     cur.execute("SELECT user_id, first_name FROM users ORDER BY id DESC LIMIT 20")
     data = cur.fetchall()
+
     conn.close()
 
     text = "👥 Latest Users:\n\n"
@@ -45,7 +51,7 @@ def users(m):
     bot.send_message(m.chat.id, text)
 
 # =====================
-# ORDERS
+# ORDERS LIST
 # =====================
 @bot.message_handler(commands=['orders'])
 def orders(m):
@@ -54,8 +60,10 @@ def orders(m):
 
     conn = connect()
     cur = conn.cursor()
+
     cur.execute("SELECT user_id, product, amount, status FROM orders ORDER BY id DESC LIMIT 20")
     data = cur.fetchall()
+
     conn.close()
 
     text = "📦 Latest Orders:\n\n"
@@ -79,8 +87,10 @@ def broadcast(m):
 
     conn = connect()
     cur = conn.cursor()
+
     cur.execute("SELECT user_id FROM users")
     users = cur.fetchall()
+
     conn.close()
 
     for u in users:
@@ -92,7 +102,7 @@ def broadcast(m):
     bot.reply_to(m, "✅ Broadcast Sent")
 
 # =====================
-# RUN
+# RUN BOT
 # =====================
 print("👑 Admin Bot Running...")
 
