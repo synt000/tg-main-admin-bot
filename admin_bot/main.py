@@ -1,17 +1,21 @@
 import os
+import sys
 import telebot
-from flask import Flask, request
 from dotenv import load_dotenv
+
+# လမ်းကြောင်း ပြင်ဆင်ခြင်း
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.database import get_db_connection
 
 load_dotenv()
 
+# Token ကို စာသားထဲက အကြံပြုချက်အတိုင်း သေသေချာချာ ခေါ်ယူခြင်း
 ADMIN_TOKEN = os.getenv('ADMIN_BOT_TOKEN')
-RENDER_URL = os.getenv('RENDER_EXTERNAL_URL')
 
+# Threaded=False ပေးမှ Webhook နှင့် စနစ်တကျ အလုပ်လုပ်မည်ဖြစ်သည်
 bot = telebot.TeleBot(ADMIN_TOKEN, threaded=False)
-app = Flask(__name__)
 
+# အက်ဒမင် ID စစ်ဆေးခြင်းစနစ်
 admin_env = os.getenv('ADMIN_IDS')
 if admin_env:
     ADMIN_IDS = [int(x) for x in admin_env.split(',') if x.strip().isdigit()]
@@ -23,11 +27,21 @@ admin_states = {}
 def is_admin(user_id):
     return user_id in ADMIN_IDS
 
+# --- 🧪 TEST & DEBUG HANDLER (ဘယ်သူစာပို့ပို့ အလုပ်လုပ်၊ မလုပ် အရင်ဆုံး သိရမည့် Safe Handler) ---
+@bot.message_handler(commands=['test'])
+def handle_test(message):
+    bot.reply_to(message, "⚙️ Admin Bot Response Test: WORKING PERFECTLY ✅")
+
+# --- START COMMAND ---
 @bot.message_handler(commands=['start'])
 def admin_welcome(message):
     user_id = message.from_user.id
+    
+    # 🔍 Debug Print: အက်ဒမင် ID စစ်ဆေးမှုကို Log ထဲထုတ်ကြည့်ရန်
+    print(f"👉 ADMIN BOT START CALLED BY USER: {user_id} (Is Admin? {is_admin(user_id)})")
+    
     if not is_admin(user_id):
-        bot.reply_to(message, "❌ သင်သည် ဤစနစ်၏ Admin မဟုတ်ပါသဖြင့် အသုံးပြုခွင့်မရှိပါခင်ဗျာ။")
+        bot.reply_to(message, f"❌ သင်သည် ဤစနစ်၏ Admin မဟုတ်ပါသဖြင့် အသုံးပြုခွင့်မရှိပါခင်ဗျာ။\n*(သင်၏ ID: `{user_id}` အား Admin IDs တွင် ထည့်သွင်းပေးရန် လိုအပ်ပါသည်)*", parse_mode="Markdown")
         return
         
     markup = telebot.types.InlineKeyboardMarkup()
@@ -38,6 +52,7 @@ def admin_welcome(message):
     
     bot.reply_to(message, "⚙️ **အက်ဒမင် စီမံခန့်ခွဲရေးစနစ်မှ ကြိုဆိုပါသည်**\n\nလုပ်ဆောင်လိုသော အလုပ်ကို အောက်ပါခလုတ်တွင် ရွေးချယ်ပေးပါဗျာ။", reply_markup=markup, parse_mode="Markdown")
 
+# --- CALLBACK QUERY HANDLERS ---
 @bot.callback_query_handler(func=lambda call: True)
 def admin_callbacks(call):
     user_id = call.from_user.id
@@ -56,6 +71,7 @@ def admin_callbacks(call):
         admin_states[user_id] = {'category': category, 'step': 'name'}
         bot.send_message(user_id, f"📝 အမျိုးအစား: {category}\n\n**ပစ္စည်းအမည် (Product Name)** ကို ရိုက်ပို့ပေးပါဗျာ:")
 
+# --- TEXT MESSAGE HANDLERS FOR ADDING PRODUCT ---
 @bot.message_handler(func=lambda message: message.from_user.id in admin_states)
 def process_product_adding(message):
     user_id = message.from_user.id
@@ -78,6 +94,7 @@ def process_product_adding(message):
         except ValueError:
             bot.reply_to(message, "❌ ကျေးဇူးပြု၍ စျေးနှုန်းကို ဂဏန်းနံပါတ် သီးသန့်သာ ရိုက်ပေးပါဗျာ:")
 
+# --- PHOTO HANDLER ---
 @bot.message_handler(content_types=['photo'], func=lambda message: message.from_user.id in admin_states and admin_states[message.from_user.id]['step'] == 'image')
 def process_product_image(message):
     user_id = message.from_user.id
@@ -96,19 +113,3 @@ def process_product_image(message):
     
     del admin_states[user_id]
     bot.reply_to(message, f"✅ **ပစ္စည်းအသစ် တင်ပြီးမြောက်ပါပြီ။**\n\nဝယ်သူများဘက်ခြမ်း Bot တွင် ယခုပစ္စည်းကို ချက်ချင်း ဝယ်ယူနိုင်ပါပြီခင်ဗျာ။")
-
-# ဤနေရာတွင် မူရင်း Route အစား run.py မှ ခေါ်မည့် root route အတိုင်း သတ်မှတ်ပေးခြင်း
-@app.route('/', methods=['POST'])
-def getAdminMessage():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return "!", 200
-
-@app.route("/")
-def admin_webhook():
-    return "Admin Sub-app Active", 200
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
-    app.run(host="0.0.0.0", port=port)
