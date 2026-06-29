@@ -5,8 +5,6 @@ from admin_bot.main import app as admin_app
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.serving import run_simple
 
-# Flask Web Services နှစ်ခုလုံးကို URL တစ်ခုတည်းအောက်တွင် ပေါင်းစည်းခြင်း
-# /admin အောက်သို့သွားလျှင် Admin Bot Webhook သို့ ရောက်မည်
 combined_app = DispatcherMiddleware(user_app, {
     '/admin': admin_app
 })
