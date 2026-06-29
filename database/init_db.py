@@ -14,7 +14,8 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER UNIQUE,
         username TEXT,
-        first_name TEXT
+        first_name TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
@@ -24,14 +25,11 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
         product TEXT,
-        amount INTEGER,
-        status TEXT DEFAULT 'pending'
+        amount TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
     conn.commit()
     conn.close()
-
-if __name__ == "__main__":
-    init_db()
-    print("Database initialized successfully")
