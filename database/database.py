@@ -1,25 +1,31 @@
-def add_vip(user_id, plan, expires_at):
+import sqlite3
+from core.config import DATABASE
+
+def connect():
+    return sqlite3.connect(DATABASE)
+
+# USER
+def add_user(user_id, username, first_name):
     conn = connect()
     cur = conn.cursor()
 
     cur.execute("""
-    INSERT OR REPLACE INTO vip_users (user_id, plan, expires_at, status)
-    VALUES (?, ?, ?, 'active')
-    """, (user_id, plan, expires_at))
+    INSERT OR IGNORE INTO users (user_id, username, first_name)
+    VALUES (?, ?, ?)
+    """, (user_id, username, first_name))
 
     conn.commit()
     conn.close()
 
-
-def check_vip(user_id):
+# ORDER
+def add_order(user_id, product, amount):
     conn = connect()
     cur = conn.cursor()
 
     cur.execute("""
-    SELECT plan, expires_at, status FROM vip_users
-    WHERE user_id = ?
-    """, (user_id,))
+    INSERT INTO orders (user_id, product, amount)
+    VALUES (?, ?, ?)
+    """, (user_id, product, amount))
 
-    data = cur.fetchone()
+    conn.commit()
     conn.close()
-    return data
