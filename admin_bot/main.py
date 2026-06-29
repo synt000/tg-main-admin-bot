@@ -3,113 +3,141 @@ import sys
 import telebot
 from dotenv import load_dotenv
 
-# လမ်းကြောင်း ပြင်ဆင်ခြင်း
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.database import get_db_connection
 
 load_dotenv()
 
-# Token ကို စာသားထဲက အကြံပြုချက်အတိုင်း သေသေချာချာ ခေါ်ယူခြင်း
+# Super Admin အတွက် သီးသန့် တိုကင်
 ADMIN_TOKEN = os.getenv('ADMIN_BOT_TOKEN')
-
-# Threaded=False ပေးမှ Webhook နှင့် စနစ်တကျ အလုပ်လုပ်မည်ဖြစ်သည်
 bot = telebot.TeleBot(ADMIN_TOKEN, threaded=False)
 
-# အက်ဒမင် ID စစ်ဆေးခြင်းစနစ်
-admin_env = os.getenv('ADMIN_IDS')
-if admin_env:
-    ADMIN_IDS = [int(x) for x in admin_env.split(',') if x.strip().isdigit()]
-else:
-    ADMIN_IDS = []
+# Env ထဲမှ Super Admin ID များကို စာရင်းအဖြစ် ဖတ်ယူခြင်း
+admin_env = os.getenv('ADMIN_IDS', '')
+SUPER_ADMIN_IDS = [int(x) for x in admin_env.split(',') if x.strip().isdigit()]
 
-admin_states = {}
+def is_super_admin(user_id):
+    return user_id in SUPER_ADMIN_IDS
 
-def is_admin(user_id):
-    return user_id in ADMIN_IDS
-
-# --- 🧪 TEST & DEBUG HANDLER (ဘယ်သူစာပို့ပို့ အလုပ်လုပ်၊ မလုပ် အရင်ဆုံး သိရမည့် Safe Handler) ---
-@bot.message_handler(commands=['test'])
-def handle_test(message):
-    bot.reply_to(message, "⚙️ Admin Bot Response Test: WORKING PERFECTLY ✅")
-
-# --- START COMMAND ---
+# --- 👑 SUPER ADMIN START MENU ---
 @bot.message_handler(commands=['start'])
-def admin_welcome(message):
+def super_admin_start(message):
     user_id = message.from_user.id
-    
-    # 🔍 Debug Print: အက်ဒမင် ID စစ်ဆေးမှုကို Log ထဲထုတ်ကြည့်ရန်
-    print(f"👉 ADMIN BOT START CALLED BY USER: {user_id} (Is Admin? {is_admin(user_id)})")
-    
-    if not is_admin(user_id):
-        bot.reply_to(message, f"❌ သင်သည် ဤစနစ်၏ Admin မဟုတ်ပါသဖြင့် အသုံးပြုခွင့်မရှိပါခင်ဗျာ။\n*(သင်၏ ID: `{user_id}` အား Admin IDs တွင် ထည့်သွင်းပေးရန် လိုအပ်ပါသည်)*", parse_mode="Markdown")
+    if not is_super_admin(user_id):
+        bot.reply_to(message, "❌ သင်သည် စနစ်တစ်ခုလုံး၏ Super Admin မဟုတ်ပါသဖြင့် အသုံးပြုခွင့်မရှိပါ။")
         return
         
     markup = telebot.types.InlineKeyboardMarkup()
-    btn_add_prod = telebot.types.InlineKeyboardButton("📦 ပစ္စည်းအသစ်တင်ရန်", callback_data="admin_add_product")
-    btn_orders = telebot.types.InlineKeyboardButton("📋 အော်ဒါများ စစ်ဆေးရန်", callback_data="admin_view_orders")
-    markup.add(btn_add_prod)
-    markup.add(btn_orders)
+    btn_tenants = telebot.types.InlineKeyboardButton("🏬 ဆိုင်ရှင်များအား စီမံရန်", callback_data="sa_manage_tenants")
+    btn_broadcast = telebot.types.InlineKeyboardButton("📢 ဆိုင်ရှင်အားလုံးဆီ စာပို့ရန်", callback_data="sa_broadcast")
     
-    bot.reply_to(message, "⚙️ **အက်ဒမင် စီမံခန့်ခွဲရေးစနစ်မှ ကြိုဆိုပါသည်**\n\nလုပ်ဆောင်လိုသော အလုပ်ကို အောက်ပါခလုတ်တွင် ရွေးချယ်ပေးပါဗျာ။", reply_markup=markup, parse_mode="Markdown")
-
-# --- CALLBACK QUERY HANDLERS ---
-@bot.callback_query_handler(func=lambda call: True)
-def admin_callbacks(call):
-    user_id = call.from_user.id
-    if not is_admin(user_id): return
+    markup.add(btn_tenants)
+    markup.add(btn_broadcast)
     
-    if call.data == "admin_add_product":
-        markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(telebot.types.InlineKeyboardButton("📱 Digital Accounts", callback_data="setcat_Digital"))
-        markup.add(telebot.types.InlineKeyboardButton("👕 အဝတ်အထည်နှင့် ဖက်ရှင်", callback_data="setcat_Clothes"))
-        markup.add(telebot.types.InlineKeyboardButton("📦 အထွေထွေသုံး လူသုံးကုန်", callback_data="setcat_General"))
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              text="🏷️ **ပစ္စည်းတင်မည့် အမျိုးအစားကို ရွေးချယ်ပါ:**", reply_markup=markup)
-                              
-    elif call.data.startswith("setcat_"):
-        category = call.data.split("_")[1]
-        admin_states[user_id] = {'category': category, 'step': 'name'}
-        bot.send_message(user_id, f"📝 အမျိုးအစား: {category}\n\n**ပစ္စည်းအမည် (Product Name)** ကို ရိုက်ပို့ပေးပါဗျာ:")
+    bot.send_message(user_id, "⚙️ **SaaS Super Admin Control Center**\n\nစနစ်တစ်ခုလုံးရှိ ဆိုင်ရှင်များအား ထိန်းချုပ်ရန်နှင့် သတင်းထုတ်ပြန်ရန် ရွေးချယ်ပါဗျာ။", reply_markup=markup, parse_mode="Markdown")
 
-# --- TEXT MESSAGE HANDLERS FOR ADDING PRODUCT ---
-@bot.message_handler(func=lambda message: message.from_user.id in admin_states)
-def process_product_adding(message):
+# --- 📈 /report COMMAND (စာရင်းဇယားနှင့် လစဉ်ကြေးစာရင်းများ ထုတ်ပေးခြင်း) ---
+@bot.message_handler(commands=['report'])
+def generate_saas_report(message):
     user_id = message.from_user.id
-    state = admin_states[user_id]
-    
-    if state['step'] == 'name':
-        state['name'] = message.text
-        state['step'] = 'desc'
-        bot.reply_to(message, "📝 **ပစ္စည်းအကြောင်းအရာ အကျဉ်း (Description)** ကို ရိုက်ပို့ပေးပါဗျာ:")
-    elif state['step'] == 'desc':
-        state['desc'] = message.text
-        state['step'] = 'price'
-        bot.reply_to(message, "💰 **ပစ္စည်းစျေးနှုန်း (Price in MMK)** ကို နံပါတ်သက်သက်ပဲ ရိုက်ပို့ပေးပါဗျာ:")
-    elif state['step'] == 'price':
-        try:
-            price = float(message.text)
-            state['price'] = price
-            state['step'] = 'image'
-            bot.reply_to(message, "🖼️ နောက်ဆုံးအဆင့်အနေနဲ့ **ပစ္စည်းဓာတ်ပုံ (Product Image)** ကို ပို့ပေးပါဗျာ:")
-        except ValueError:
-            bot.reply_to(message, "❌ ကျေးဇူးပြု၍ စျေးနှုန်းကို ဂဏန်းနံပါတ် သီးသန့်သာ ရိုက်ပေးပါဗျာ:")
-
-# --- PHOTO HANDLER ---
-@bot.message_handler(content_types=['photo'], func=lambda message: message.from_user.id in admin_states and admin_states[message.from_user.id]['step'] == 'image')
-def process_product_image(message):
-    user_id = message.from_user.id
-    state = admin_states[user_id]
-    file_id = message.photo[-1].file_id
+    if not is_super_admin(user_id): return
     
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO products (name, description, price, image_file_id, category)
-        VALUES (%s, %s, %s, %s, %s);
-    ''', (state['name'], state['desc'], state['price'], file_id, state['category']))
-    conn.commit()
+    
+    # ဆိုင်အားလုံး၏ စုစုပေါင်း ရောင်းရငွေ (TMA Orders) နှင့် လစဉ်ကြေးရရှိမှု စုစုပေါင်းအား တွက်ချက်ခြင်း
+    cursor.execute("SELECT COALESCE(SUM(total_amount), 0) as total_sales FROM orders WHERE payment_status = 'verified';")
+    total_sales = cursor.fetchone()['total_sales']
+    
+    cursor.execute("SELECT COALESCE(SUM(amount_paid), 0) as total_subs FROM subscription_logs;")
+    total_subs = cursor.fetchone()['total_subs']
+    
+    cursor.execute("SELECT COUNT(*) as active_shops FROM tenants WHERE subscription_status = 'active';")
+    active_shops = cursor.fetchone()['active_shops']
+    
     cursor.close()
     conn.close()
     
-    del admin_states[user_id]
-    bot.reply_to(message, f"✅ **ပစ္စည်းအသစ် တင်ပြီးမြောက်ပါပြီ။**\n\nဝယ်သူများဘက်ခြမ်း Bot တွင် ယခုပစ္စည်းကို ချက်ချင်း ဝယ်ယူနိုင်ပါပြီခင်ဗျာ။")
+    report_text = (
+        f"📊 **SaaS System Platform Report**\n\n"
+        f"🏬 လက်ရှိလည်ပတ်နေသော ဆိုင်စုစုပေါင်း: {active_shops} ဆိုင်\n"
+        f"💳 စနစ်တစ်ခုလုံး၏ စုစုပေါင်းရောင်းရငွေ: {total_sales:,} MMK\n"
+        f"💵 Super Admin ရရှိထားသော လစဉ်ကြေးစုစုပေါင်း: {total_subs:,} MMK\n\n"
+        f"*(ဒေတာများကို ဗဟို PostgreSQL Database မှ Real-time တွက်ချက်ထားခြင်းဖြစ်သည်)*"
+    )
+    bot.send_message(user_id, report_text, parse_mode="Markdown")
+
+# --- 🎯 INLINE BUTTONS ACTIONS (ခလုတ်များ နှိပ်လျှင် အလုပ်လုပ်မည့်စနစ်) ---
+@bot.callback_query_handler(func=lambda call: call.data.startswith("sa_"))
+def super_admin_callbacks(call):
+    user_id = call.from_user.id
+    if not is_super_admin(user_id): return
+    
+    if call.data == "sa_manage_tenants":
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT tenant_id, shop_name, subscription_status FROM tenants LIMIT 10;")
+        tenants = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        if not tenants:
+            bot.answer_callback_query(call.id, text="လက်ရှိတွင် ငှားရမ်းထားသော ဆိုင်ရှင်မရှိသေးပါ။")
+            return
+            
+        markup = telebot.types.InlineKeyboardMarkup()
+        for t in tenants:
+            status_icon = "✅" if t['subscription_status'] == 'active' else "❌"
+            # ခလုတ်နှိပ်လျှင် သက်ဆိုင်ရာဆိုင်ကို Suspend သို့မဟုတ် Activate လုပ်ရန် စီစဉ်ခြင်း
+            action_data = f"sa_toggle_{t['tenant_id']}"
+            markup.add(telebot.types.InlineKeyboardButton(f"{status_icon} {t['shop_name']}", callback_data=action_data))
+            
+        bot.edit_message_text(chat_id=user_id, message_id=call.message.message_id, 
+                              text="🏬 **ငှားရမ်းထားသော ဆိုင်များစာရင်း**\n\nဆိုင်အား ခေတ္တပိတ်သိမ်းရန် (Suspend) သို့မဟုတ် ပြန်ဖွင့်ရန် သက်ဆိုင်ရာဆိုင်ခလုတ်ကို နှိပ်ပါဗျာ။", 
+                              reply_markup=markup)
+                              
+    elif call.data.startswith("sa_toggle_"):
+        tenant_id = int(call.data.split("_")[2])
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # ဆိုင်၏ လက်ရှိအခြေအနေကို စစ်ပြီး ပြောင်းပြန်လှန်ခြင်း (Active <-> Suspended)
+        cursor.execute("SELECT subscription_status FROM tenants WHERE tenant_id = %s;", (tenant_id,))
+        current_status = cursor.fetchone()['subscription_status']
+        new_status = 'suspended' if current_status == 'active' else 'active'
+        
+        cursor.execute("UPDATE tenants SET subscription_status = %s WHERE tenant_id = %s;", (new_status, tenant_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        bot.answer_callback_query(call.id, text=f"ဆိုင်အခြေအနေအား {new_status.upper()} သို့ ပြောင်းလဲလိုက်ပါပြီ။")
+        # မီနူးအား Refresh ပြန်လုပ်ခြင်း
+        super_admin_start(call.message)
+
+    elif call.data == "sa_broadcast":
+        # Global Broadcast စနစ်အတွက် စာရိုက်ရန် အချက်ပေးခြင်း
+        msg = bot.send_message(user_id, "📢 **Global Broadcast System**\n\nဆိုင်ရှင်အားလုံးဆီ တစ်ပြိုင်နက် ပို့ချင်တဲ့ 'စနစ် Update သတင်းစကား' ကို ရိုက်ပို့ပေးပါဗျာ:")
+        bot.register_next_step_handler(msg, process_global_broadcast)
+
+def process_global_broadcast(message):
+    user_id = message.from_user.id
+    broadcast_text = message.text
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT owner_id FROM tenants;")
+    owners = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    success_count = 0
+    for owner in owners:
+        try:
+            # ဆိုင်ရှင်တစ်ဦးချင်းစီ၏ Telegram ဆီသို့ Message လှမ်းပို့ခြင်း
+            bot.send_message(owner['owner_id'], f"🚨 **SaaS Platform Update Notification**\n\n{broadcast_text}")
+            success_count += 1
+        except Exception:
+            pass
+            
+    bot.send_message(user_id, f"✅ Broadcast ပြီးမြောက်ပါပြီ။ ဆိုင်ရှင်စုစုပေါင်း {success_count} ဦးထံသို့ အောင်မြင်စွာ ပို့ဆောင်ပြီးပါပြီ။")

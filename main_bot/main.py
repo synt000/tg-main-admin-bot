@@ -8,109 +8,62 @@ from core.database import get_db_connection
 
 load_dotenv()
 
-API_TOKEN = os.getenv('BOT_TOKEN')
-BOT_USERNAME = os.getenv('BOT_USERNAME')
+# WebApp ပွင့်မည့် သတ်မှတ်ချက် URL (SaaS Engine Frontend Link)
+TMA_FRONTEND_URL = os.getenv('TMA_FRONTEND_URL', 'https://onrender.com')
 
-# Flask App ❌ လုံးဝမလိုတော့ပါ။ Pure Bot Logic သာ ဖြစ်သည်။
-bot = telebot.TeleBot(API_TOKEN, threaded=False)
+# ⚠️ Whitelabel Engine ဖြစ်သောကြောင့် Token အား Router မှ Dynamic ဖြည့်ပေးမည်ဖြစ်သော်လည်း
+# Handler ကြေညာချက်များ အဆင်ပြေစေရန် အခြေခံ Instance ဆောက်ထားခြင်းဖြစ်သည်
+bot = telebot.TeleBot(os.getenv('BOT_TOKEN', 'DUMMY_TOKEN'), threaded=False)
 
+# --- 🛍️ CHATBOT INLINE BUTTONS (ဝယ်သူများ ဆိုင်ထဲသို့ဝင်မည့် ပင်မစာမျက်နှာ) ---
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
+def customer_start(message):
     user_id = message.from_user.id
     username = message.from_user.username
     full_name = message.from_user.full_name
     
+    # ဝယ်သူအား ဗဟို Database ထဲသို့ သိမ်းဆည်းခြင်း (Checkout Memory အတွက်)
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO users (user_id, username, full_name) 
-        VALUES (%s, %s, %s) 
-        ON CONFLICT (user_id) DO NOTHING;
+        INSERT INTO users (telegram_id, username, full_name)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (telegram_id) DO NOTHING;
     ''', (user_id, username, full_name))
     conn.commit()
     cursor.close()
     conn.close()
     
+    # Prompt ထဲမှ တောင်းဆိုထားသည့်အတိုင်း လှပသော Inline ခလုတ်များ ဖန်တီးခြင်း
     markup = telebot.types.InlineKeyboardMarkup()
-    btn_shop = telebot.types.InlineKeyboardButton("🛒 ပစ္စည်းများကြည့်ရန်", callback_data="view_shop")
-    btn_agent = telebot.types.InlineKeyboardButton("💰 ကူရောင်းပြီး ပိုက်ဆံရှာရန်", callback_data="agent_panel")
-    btn_wallet = telebot.types.InlineKeyboardButton("💳 ကျွန်ုပ်၏ Wallet", callback_data="my_wallet")
+    
+    # Telegram Mini App (TMA) သို့ တိုက်ရိုက်ဝင်မည့် WebApp Button
+    web_app_info = telebot.types.WebAppInfo(url=TMA_FRONTEND_URL)
+    btn_shop = telebot.types.InlineKeyboardButton("🛍️ ဆိုင်သို့ဝင်ရန် (Web App)", web_app_info=web_app_info)
+    
+    btn_history = telebot.types.InlineKeyboardButton("📦 မှာယူမှုမှတ်တမ်း", callback_data="cust_order_history")
+    btn_support = telebot.types.InlineKeyboardButton("📞 ဆိုင်ရှင်နှင့်စကားပြောရန်", callback_data="cust_contact_owner")
     
     markup.add(btn_shop)
-    markup.add(btn_agent, btn_wallet)
+    markup.add(btn_history, btn_support)
     
-    bot.reply_to(message, f"👋 မင်္ဂလာပါ {full_name}!\nဘက်စုံသုံး Online Store မှ ကြိုဆိုပါတယ်။\n\nပစ္စည်းများကို စျေးနှုန်းချိုသာစွာဖြင့် ဝယ်ယူနိုင်သလို၊ သူငယ်ချင်းများကို လင့်ခ်မျှဝေပြီး ကော်မရှင်ခ ရှာဖွေနိုင်ပါတယ်ဗျာ။", reply_markup=markup)
+    bot.reply_to(message, f"👋 မင်္ဂလာပါ {full_name}!\nကျွန်ုပ်တို့၏ ဘက်စုံသုံး Whitelabel စတိုးဆိုင်မှ ကြိုဆိုပါတယ်ဗျာ။\n\nအောက်ပါခလုတ်ကိုနှိပ်ပြီး ဈေးဝယ်ခြင်း၊ ရက်ချိန်း Booking တင်ခြင်းများကို Telegram ထဲမှာတင် Website တစ်ခုလိုမျိုး ခေတ်မီစွာ ပြုလုပ်နိုင်ပါပြီခင်ဗျာ။", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_listener(call):
-    user_id = call.from_user.id
-    if call.data == "view_shop":
-        markup = telebot.types.InlineKeyboardMarkup()
-        btn_digital = telebot.types.InlineKeyboardButton("📱 Digital Accounts / Software", callback_data="cat_Digital")
-        btn_clothes = telebot.types.InlineKeyboardButton("👕 အဝတ်အထည်နှင့် ဖက်ရှင်", callback_data="cat_Clothes")
-        btn_general = telebot.types.InlineKeyboardButton("📦 အထွေထွေသုံး လူသုံးကုန်", callback_data="cat_General")
-        btn_back = telebot.types.InlineKeyboardButton("🔙 ပင်မမီနူးသို့", callback_data="back_to_main")
-        markup.add(btn_digital)
-        markup.add(btn_clothes)
-        markup.add(btn_general)
-        markup.add(btn_back)
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
-                              text="🛍️ **ပစ္စည်းအမျိုးအစားများ**\n\nသင်ကြည့်ရှုလိုသော အမျိုးအစားကို ရွေးချယ်ပေးပါဗျာ။", 
-                              parse_mode="Markdown", reply_markup=markup)
-                              
-    elif call.data.startswith("cat_"):
-        category_name = call.data.split("_")
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM products WHERE category = %s AND stock > 0;", (category_name,))
-        products = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        if not products:
-            markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(telebot.types.InlineKeyboardButton("🔙 နောက်သို့", callback_data="view_shop"))
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
-                                  text=f"❌ လက်ရှိတွင် *{category_name}* အမျိုးအစားထဲ၌ ရောင်းရန်ပစ္စည်း မရှိသေးပါခင်ဗျာ။", 
-                                  parse_mode="Markdown", reply_markup=markup)
-            return
-        bot.answer_callback_query(call.id, text=f"{category_name} ပစ္စည်းစာရင်းကို ရှာဖွေနေပါသည်...")
-
-    elif call.data == "agent_panel":
-        referral_link = f"https://t.me{BOT_USERNAME}?start={user_id}"
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT commission_earned FROM users WHERE user_id = %s;", (user_id,))
-        user_data = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        commission = user_data['commission_earned'] if user_data else 0.0
-        markup = telebot.types.InlineKeyboardMarkup()
-        btn_back = telebot.types.InlineKeyboardButton("🔙 ပင်မမီနူးသို့", callback_data="back_to_main")
-        markup.add(btn_back)
-        agent_text = (
-            f"💰 **Agent ကူရောင်းရေး ပန်နယ်လ်**\n\n🔗 **သင်၏ ဖိတ်ခေါ်စာလင့်ခ်:**\n`{referral_link}`\n\n💵 **စုစုပေါင်းရရှိပြီးသော ကော်မရှင်ခ:** {commission} MMK"
-        )
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=agent_text, parse_mode="Markdown", reply_markup=markup)
-
-    elif call.data == "my_wallet":
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT balance FROM users WHERE user_id = %s;", (user_id,))
-        user_data = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        balance = user_data['balance'] if user_data else 0.0
-        markup = telebot.types.InlineKeyboardMarkup()
-        btn_back = telebot.types.InlineKeyboardButton("🔙 ပင်မမီနူးသို့", callback_data="back_to_main")
-        markup.add(btn_back)
-        wallet_text = f"💳 **ကျွန်ုပ်၏ Wallet စာမျက်နှာ**\n\n💵 **လက်ရှိ လက်ကျန်ငွေ:** {balance} MMK"
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=wallet_text, parse_mode="Markdown", reply_markup=markup)
-
-    elif call.data == "back_to_main":
-        markup = telebot.types.InlineKeyboardMarkup()
-        btn_shop = telebot.types.InlineKeyboardButton("🛒 ပစ္စည်းများကြည့်ရန်", callback_data="view_shop")
-        btn_agent = telebot.types.InlineKeyboardButton("💰 ကူရောင်းပြီး ပိုက်ဆံရှာရန်", callback_data="agent_panel")
-        btn_wallet = telebot.types.InlineKeyboardButton("💳 ကျွန်ုပ်၏ Wallet", callback_data="my_wallet")
-        markup.add(btn_shop)
-        markup.add(btn_agent, btn_wallet)
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="👋 ပင်မစာမျက်နှာသို့ ပြန်ရောက်ပါပြီ။", reply_markup=markup)
+# --- 📦 SMOOTH TRANSITION FLOW (ဝယ်သူ TMA ထဲတွင် ငွေချေပြီးလျှင် Bot ထဲသို့ ဒေတာဝင်လာမည့်စနစ်) ---
+@bot.message_handler(content_types=['web_app_data'])
+def handle_tma_checkout_data(message):
+    user_id = message.from_user.id
+    # Mini App ဘက်မှ tg.sendData() ဖြင့် ပို့လိုက်သော ဒေတာအား ဖတ်ခြင်း
+    try:
+        tma_data = json.loads(message.web_app_data.data)
+        
+        if tma_data.get("event") == "checkout_success":
+            total_amount = tma_data.get("total_amount", 0)
+            
+            # ဒစ်ဂျစ်တယ် ဗောက်ချာအတွက် QR Code အား အလိုအလျောက် ထုတ်ပေးခြင်း (Digital Voucher Generator)
+            voucher_code = f"VOUCHER-{user_id}-{message.message_id}"
+            
+            # စာသားချက်ချင်း ဝင်လာစေခြင်း
+            bot.send_message(user_id, f"🎉 **မှာယူမှု အောင်မြင်ပါသည်ခင်ဗျာ!**\n\n💵 **စုစုပေါင်း ကျသင့်ငွေ:** {total_amount:,} MMK\n🎫 **သင်၏ ဒစ်ဂျစ်တယ် ပြေစာကုဒ်:** `{voucher_code}`\n\nလူကြီးမင်း မှာယူလိုက်သော ပစ္စည်းများကို ဆိုင်ရှင်မှ စစ်ဆေးပြီးပါက ပစ္စည်းများအား ချက်ချင်း ပို့ဆောင်ပေးသွားမည် ဖြစ်ပါသည်ဗျာ။")
+    except Exception as e:
+        print(f"⚠️ WebApp Data Parse Error: {e}")
