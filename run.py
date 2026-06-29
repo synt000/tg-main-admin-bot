@@ -1,6 +1,7 @@
 import sys
 import os
 import telebot
+import json
 from flask import Flask, request
 from dotenv import load_dotenv
 
@@ -16,17 +17,14 @@ except Exception as e:
 
 load_dotenv()
 
-# Token များကို သီးသန့်စီ ခွဲထုတ်ခြင်း
 MAIN_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_TOKEN = os.getenv('ADMIN_BOT_TOKEN')
 
-# ဘော့တ် Instance များကို သီးသန့်စီ ချိတ်ဆက်ခြင်း
 from main_bot.main import bot as main_bot
 from admin_bot.main import bot as admin_bot
 
 app = Flask(__name__)
 
-# --- HOME ROUTE ---
 @app.route("/")
 def home():
     return "E-Commerce Multi-Bot System Server is Running ✅", 200
@@ -36,6 +34,11 @@ def home():
 def main_webhook():
     if request.headers.get('content-type') == 'application/json':
         json_string = request.get_data().decode('utf-8')
+        
+        # 🔍 Debug Log: Main Bot ဆီ Update ဝင်လာသမျှကို ကြည့်ရန်
+        update_dict = json.loads(json_string)
+        print(f"🔥 MAIN UPDATE: {json.dumps(update_dict, indent=2)}")
+        
         update = telebot.types.Update.de_json(json_string)
         main_bot.process_new_updates([update])
         return "!", 200
@@ -47,6 +50,11 @@ def main_webhook():
 def admin_webhook():
     if request.headers.get('content-type') == 'application/json':
         json_string = request.get_data().decode('utf-8')
+        
+        # 🔍 Debug Log: Admin Bot ဆီ Update ဝင်လာသမျှကို ကြည့်ရန်
+        update_dict = json.loads(json_string)
+        print(f"🔥 ADMIN UPDATE: {json.dumps(update_dict, indent=2)}")
+        
         update = telebot.types.Update.de_json(json_string)
         admin_bot.process_new_updates([update])
         return "!", 200
@@ -56,6 +64,3 @@ def admin_webhook():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-# Render / Gunicorn က လှမ်းခေါ်ရန်အတွက် app အား ကြေညာပေးခြင်း
-# Start Command: gunicorn run:app
