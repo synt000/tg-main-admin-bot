@@ -1,24 +1,11 @@
-def add_payment(user_id, order_id, proof):
+def update_order_status(order_id, status):
     conn = connect()
     cur = conn.cursor()
 
     cur.execute("""
-    INSERT INTO payments (user_id, order_id, proof)
-    VALUES (?, ?, ?)
-    """, (user_id, order_id, proof))
-
-    conn.commit()
-    conn.close()
-
-
-def update_payment_status(payment_id, status):
-    conn = connect()
-    cur = conn.cursor()
-
-    cur.execute("""
-    UPDATE payments SET status = ?
+    UPDATE orders SET status = ?
     WHERE id = ?
-    """, (status, payment_id))
+    """, (status, order_id))
 
     conn.commit()
     conn.close()
