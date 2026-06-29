@@ -1,29 +1,8 @@
-import sqlite3
-from core.config import DATABASE
+import os
 
-def connect():
-    return sqlite3.connect(DATABASE)
+MAIN_BOT_TOKEN = os.getenv("MAIN_BOT_TOKEN")
+ADMIN_BOT_TOKEN = os.getenv("ADMIN_BOT_TOKEN")
 
-def add_user(user_id, username, first_name):
-    conn = connect()
-    cur = conn.cursor()
+OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
-    cur.execute("""
-    INSERT OR IGNORE INTO users (user_id, username, first_name)
-    VALUES (?, ?, ?)
-    """, (user_id, username, first_name))
-
-    conn.commit()
-    conn.close()
-
-def add_order(user_id, product, amount):
-    conn = connect()
-    cur = conn.cursor()
-
-    cur.execute("""
-    INSERT INTO orders (user_id, product, amount)
-    VALUES (?, ?, ?)
-    """, (user_id, product, amount))
-
-    conn.commit()
-    conn.close()
+DATABASE = "database.db"
