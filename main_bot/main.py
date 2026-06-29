@@ -1,5 +1,13 @@
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import os
+import sys
+
+# =========================
+# FIX: allow core/ database imports
+# =========================
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+
+from flask import Flask, request
 
 import telebot
 from telebot import types
@@ -8,12 +16,24 @@ from core.config import MAIN_BOT_TOKEN
 from database.database import add_user, add_order
 from database.init_db import init_db
 
-# Database ကို အလိုအလျောက် ဖန်တီး
+# =========================
+# INIT DATABASE
+# =========================
 init_db()
 
+# =========================
+# BOT INIT
+# =========================
 bot = telebot.TeleBot(MAIN_BOT_TOKEN)
 
+# =========================
+# FLASK APP
+# =========================
+app = Flask(__name__)
+
+# =========================
 # MENU
+# =========================
 def main_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🛍 Services", "📦 Products")
@@ -21,7 +41,9 @@ def main_menu():
     markup.row("🎫 Support", "👤 Profile")
     return markup
 
-# START
+# =========================
+# START COMMAND
+# =========================
 @bot.message_handler(commands=['start'])
 def start(message):
     u = message.from_user
@@ -30,11 +52,13 @@ def start(message):
 
     bot.send_message(
         message.chat.id,
-        "👋 Welcome to Business Bot",
+        "👋 Welcome to Business Bot (Production Webhook 🚀)",
         reply_markup=main_menu()
     )
 
-# PRODUCTS → ORDER INFO
+# =========================
+# PRODUCTS
+# =========================
 @bot.message_handler(func=lambda m: m.text == "📦 Products")
 def products(message):
     bot.send_message(
@@ -42,41 +66,35 @@ def products(message):
         "📦 Order format:\n/order ProductName 1000"
     )
 
-# ORDER COMMAND
-@bot.message_handler(commands=['order'])
-def order(message):
-    try:
-        parts = message.text.split()
-        product = parts[1]
-        amount = int(parts[2])
+# =========================
+# WEBHOOK ROUTE
+# =========================
+@app.route(f"/webhook/{MAIN_BOT_TOKEN}", methods=["POST"])
+def webhook():
+    json_str = request.get_data().decode("UTF-8")
 
-        add_order(message.from_user.id, product, amount)
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
 
-        bot.send_message(message.chat.id, "✅ Order placed successfully")
+    return "OK", 200
 
-    except:
-        bot.send_message(message.chat.id, "❌ Use: /order ProductName 1000")
+# =========================
+# HEALTH CHECK
+# =========================
+@app.route("/")
+def home():
+    return "Bot is running 🚀"
 
-# OTHERS
-@bot.message_handler(func=lambda m: m.text == "🛍 Services")
-def services(m):
-    bot.send_message(m.chat.id, "🛍 Services available")
+@app.route("/ping")
+def ping():
+    return "OK"
 
-@bot.message_handler(func=lambda m: m.text == "💳 Payments")
-def payments(m):
-    bot.send_message(m.chat.id, "💳 KBZ / Wave Pay")
+# =========================
+# START SERVER
+# =========================
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
 
-@bot.message_handler(func=lambda m: m.text == "📋 Orders")
-def orders(m):
-    bot.send_message(m.chat.id, "📋 Use /order command")
+    print("🚀 Starting Bot Server on port:", port)
 
-@bot.message_handler(func=lambda m: m.text == "🎫 Support")
-def support(m):
-    bot.send_message(m.chat.id, "🎫 Contact admin")
-
-@bot.message_handler(func=lambda m: m.text == "👤 Profile")
-def profile(m):
-    bot.send_message(m.chat.id, f"👤 ID: {m.from_user.id}")
-
-print("Bot running...")
-bot.infinity_polling()
+    app.run(host="0.0.0.0", port=port)
