@@ -4,7 +4,6 @@ from core.config import DATABASE
 def connect():
     return sqlite3.connect(DATABASE)
 
-# USER
 def add_user(user_id, username, first_name):
     conn = connect()
     cur = conn.cursor()
@@ -17,7 +16,6 @@ def add_user(user_id, username, first_name):
     conn.commit()
     conn.close()
 
-# ORDER
 def add_order(user_id, product, amount):
     conn = connect()
     cur = conn.cursor()
