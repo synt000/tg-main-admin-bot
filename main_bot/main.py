@@ -1,7 +1,6 @@
 import os
 import sys
 import telebot
-from flask import Flask, request
 from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -10,11 +9,10 @@ from core.database import get_db_connection
 load_dotenv()
 
 API_TOKEN = os.getenv('BOT_TOKEN')
-RENDER_URL = os.getenv('RENDER_EXTERNAL_URL')
 BOT_USERNAME = os.getenv('BOT_USERNAME')
 
+# Flask App ❌ လုံးဝမလိုတော့ပါ။ Pure Bot Logic သာ ဖြစ်သည်။
 bot = telebot.TeleBot(API_TOKEN, threaded=False)
-app = Flask(__name__)
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -116,19 +114,3 @@ def callback_listener(call):
         markup.add(btn_shop)
         markup.add(btn_agent, btn_wallet)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="👋 ပင်မစာမျက်နှာသို့ ပြန်ရောက်ပါပြီ။", reply_markup=markup)
-
-# Bro တောင်းဆိုထားသည့်အတိုင်း တိုက်ရိုက်ရှင်းလင်းသော /webhook လမ်းကြောင်း သတ်မှတ်ခြင်း
-@app.route('/webhook', methods=['POST'])
-def getMessage():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return "!", 200
-
-@app.route("/")
-def webhook():
-    return "Main Bot Service Running ✅", 200
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
