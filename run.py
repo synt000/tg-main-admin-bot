@@ -17,6 +17,10 @@ except Exception as e:
 
 load_dotenv()
 
+# Admin IDs ကို စာရင်းအဖြစ် ပြောင်းလဲထားခြင်း
+admin_env = os.getenv('ADMIN_IDS', '')
+ADMIN_IDS = [int(x) for x in admin_env.split(',') if x.strip().isdigit()]
+
 # ဘော့တ် Instance များကို Import လုပ်ခြင်း
 from main_bot.main import bot as main_bot
 from admin_bot.main import bot as admin_bot
@@ -27,26 +31,37 @@ app = Flask(__name__)
 def home():
     return "E-Commerce Multi-Bot System Server is Running ✅", 200
 
-# --- 🚀 RECOMMENDED CLEAN SETUP: SINGLE WEBHOOK ROUTE ---
-# လမ်းကြောင်း တစ်ခုတည်းဖြင့် Main Bot ရော Admin Bot ကိုပါ အတူတူ ကိုင်တွယ်ခြင်း
+# --- 🚀 BEST PRACTICE: SMART FILTER UNIFIED WEBHOOK ---
 @app.route("/webhook", methods=['POST'])
 def unified_webhook():
-    if request.headers.get('content-type') == 'application/json':
+    content_type = request.headers.get("content-type", "")
+    
+    # ⚠️ Content-Type check fix: Telegram format အားလုံးကို လက်ခံနိုင်ရန်
+    if "application/json" in content_type:
         json_string = request.get_data().decode('utf-8')
-        update_dict = json.loads(json_string)
-        
-        # စစ်ဆေးရန် Debug Log
-        print(f"🔥 UNIFIED UPDATE INCOMING: {json.dumps(update_dict, indent=2)}")
         update = telebot.types.Update.de_json(json_string)
         
-        # 🔍 Token/Path ခွဲစရာမလိုဘဲ Bot နှစ်ခုလုံးဆီသို့ Update များ တစ်ပြိုင်နက် ပို့ပေးခြင်း
-        # Library က ၎င်းနှင့်ဆိုင်သော Update ကိုသာ ဖတ်ပြီး အလုပ်လုပ်သွားပါမည်။ Conflict လုံးဝမဖြစ်ပါ။
+        # 🔍 စာသားထဲက အကြံပြုချက်အတိုင်း Chat ID ကို ရှာဖွေစစ်ထုတ်ခြင်း (Message ရော Callback Query ပါ အလုပ်လုပ်ရန်)
+        chat_id = None
+        if update.message:
+            chat_id = update.message.chat.id
+        elif update.callback_query and update.callback_query.message:
+            chat_id = update.callback_query.message.chat.id
+            
+        # 🛒 ဝယ်သူ/အေးဂျင့် Flow အတွက် Main Bot ဆီသို့ Update အမြဲမပြတ်ပို့ခြင်း
         try:
             main_bot.process_new_updates([update])
-            admin_bot.process_new_updates([update])
         except Exception as e:
-            print(f"⚠️ Bot Process Update Error: {e}")
+            print(f"⚠️ Main Bot Process Error: {e}")
             
+        # ⚙️ Smart Filter: အချက်အလက်ပို့သူသည် Admin စာရင်းဝင်မှသာ Admin Bot ဆီသို့ ပို့ဆောင်ခြင်း
+        if chat_id and chat_id in ADMIN_IDS:
+            try:
+                print(f"⚙️ Routing update to Admin Bot for Admin User ID: {chat_id}")
+                admin_bot.process_new_updates([update])
+            except Exception as e:
+                print(f"⚠️ Admin Bot Process Error: {e}")
+                
         return "!", 200
     else:
         return "Invalid Content-Type", 400
