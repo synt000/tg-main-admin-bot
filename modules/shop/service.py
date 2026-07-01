@@ -26,7 +26,6 @@ class ShopService:
         cur.execute("SELECT product_name, stock_count, price FROM products WHERE product_id = %s AND business_id = %s;", (prod_id, biz_id))
         prod = cur.fetchone()
         
-        # 🚀 🔒 [FIX APPLIED]: အစ်ကို့ရဲ့ FULL PATCH (CLEAN UNPACKING VERSION) အား ကွက်တိ အစားထိုးခြင်း
         if not prod:
             cur.close(); conn.close()
             return None, "Product Not Found"
@@ -52,6 +51,33 @@ class ShopService:
     @staticmethod
     def process_customer_order(biz_id, prod_id, customer_id, buy_count, payment_method="KBZPay"):
         return ShopService.create_enterprise_order(biz_id, prod_id, customer_id, buy_count, payment_method)
+
+    # 🚀 🔒 [FIX APPLIED]: အစ်ကို့ရဲ့ Missing Method အား Enterprise Tuple Standard ဖြင့် ကွက်တိဖြည့်စွက်ခြင်း
+    @staticmethod
+    def track_order_status(biz_id, order_id):
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT order_id, business_id, customer_id, total_amount, delivery_status FROM orders WHERE business_id = %s AND order_id = %s;", (biz_id, order_id))
+        order = cur.fetchone()
+        cur.close(); conn.close()
+        
+        if not order: return None
+        return {
+            "order_id": order[0],
+            "business_id": order[1],
+            "customer_id": order[2],
+            "total_amount": order[3],
+            "status": order[4]
+        }
+
+    # Backward Compatibility Methods
+    @staticmethod
+    def transition_order_status(biz_id, order_id, next_status):
+        return ShopRepository.db_update_order_status(biz_id, order_id, next_status)
+
+    @staticmethod
+    def refund_and_cancel_order(biz_id, order_id):
+        return ShopRepository.db_process_order_refund(biz_id, order_id)
 
     @staticmethod
     def list_products(biz_id):
