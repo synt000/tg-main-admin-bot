@@ -39,3 +39,19 @@ register_home_callbacks(bot)
 
 if __name__ == "__main__":
     print("🚀 BusinessOS Multi-Layer Middleware Router Engine Online...")
+
+# 🚀 🔒 [FIX APPLIED]: အစ်ကို ညွှန်ကြားထားသည့် စံနှုန်းအတိုင်း run_bot() နှင့် main() Entry Points များအား တိုက်ရိုက်ဖြည့်စွက်ခြင်း
+def run_bot():
+    print("🤖 Telegram Bot Polling Started...")
+    bot.infinity_polling(
+        skip_pending=True,
+        timeout=10,
+        long_polling_timeout=5
+    )
+
+def main():
+    run_bot()
+
+if __name__ == "__main__":
+    print("🚀 BusinessOS Multi-Layer Middleware Router Engine Online...")
+    run_bot()
