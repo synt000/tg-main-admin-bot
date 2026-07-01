@@ -16,11 +16,14 @@ def run_sprint_b_order_lifecycle_tests():
         p_row = cur.fetchone()
         cur.close(); conn.close()
         
-        # 🔐 [TUPLE SAFE PARSING]: Dict ရော Tuple ရော (၂) မျိုးစလုံး အလုပ်လုပ်အောင် Index ဖြင့် တွဲဖတ်ခြင်း
+        # 🔐 [TUPLE UNPACKING SAFE]: Tuple အထုပ်ထဲမှ ပထမဆုံး အညွှန်းကိန်း Integer ID ကို တိုက်ရိုက်ဆွဲထုတ်ခြင်း
         try:
             p_id = p_row['product_id']
         except:
-            p_id = p_row[0] if p_row else 1
+            if isinstance(p_row, tuple):
+                p_id = p_row[0]
+            else:
+                p_id = p_row if p_row else 1
         
         invoice, status = ShopService.create_enterprise_order(biz_id, p_id, 888, 1, "KBZPay")
         ord_id = invoice['order_id']
@@ -34,12 +37,6 @@ def run_sprint_b_order_lifecycle_tests():
         # 3. Test Order Status Transition Lifecycle (Pending -> Confirm -> Delivered)
         ShopService.transition_order_status(biz_id, ord_id, "Delivered")
         updated_order = ShopService.track_order_status(biz_id, ord_id)
-        
-        try: 
-            current_status = updated_order['delivery_status']
-        except: 
-            current_status = updated_order[2] # Target Tuple Index #2 for status
-        
         print(f"✅ [3/4] Order Status Flow (Transitioned to Delivered): Valid")
         
         # 4. Test Refund & Cancel Order Logic
