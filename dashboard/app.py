@@ -5,12 +5,21 @@ from web_admin.router import admin_router
 
 app = FastAPI(
     title="BusinessOS Multi-Tenant SaaS Engine", 
-    version="1.1.0",
-    description="Production-ready Intelligent Business Management API Documentation (v1.1)"
+    version="1.2.0",
+    description="Production-ready Intelligent Business Management API Documentation (v1.2)"
 )
 
-# 🔗 🌐 [ROUTER INJECTION]: Web Admin Panel အား ဗဟိုချက်ထဲသို့ တိုက်ရိုက် အသက်သွင်းချိတ်ဆက်ခြင်း
+# 🔗 🌐 [ROUTER INJECTION]: Web Admin Panel Integration Route
 app.include_router(admin_router)
+
+# 🚀 🔒 [PHASE 1 APPLIED]: အစ်ကို ညွှန်ကြားထားသည့် Render Production Health Check Endpoint
+@app.get("/health", summary="Perform System Infrastructure Health Check", tags=["Production Hardening"])
+def health():
+    return {
+        "status": "ok",
+        "version": "1.2",
+        "environment": "production"
+    }
 
 @app.get("/business/{biz_id}/summary", summary="Get Financial Sales Summary")
 def summary(biz_id: str):
