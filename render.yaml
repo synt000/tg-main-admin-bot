@@ -3,7 +3,7 @@ services:
     name: tg-saas-operating-system
     runtime: python
     buildCommand: "pip install --no-cache-dir -r requirements.txt"
-    # 🔗 🌐 [CLOUD APP ROUTING]: ပင်မအူတိုင်ဖြစ်သော dashboard.app:app နှင့် ကွက်တိ ချိတ်ပိတ်ခြင်း
+    # 🔗 🌐 [CLOUD API GATEWAY]: FastAPI အား Uvicorn ဖြင့် Cloud Web Proxy ချိတ်ဆက်ခြင်း
     startCommand: "uvicorn dashboard.app:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
