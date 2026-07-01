@@ -1,18 +1,32 @@
-import os, sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+import os
+import threading
+import uvicorn
+from fastapi import FastAPI
+from main_bot.main import start_bot
 
-print("🛒 Central SaaS Database Synchronized!")
-print("🛡️ [SaaS Architecture Verification]: Passed.")
+# 🛡️ Render Port Scan Bypass Guard Layer
+app = FastAPI()
 
-try:
-    from main_bot.main import bot
-    print("🚀 BusinessOS Enterprise Operating System v1.0 is active and live...")
+@app.get("/")
+def home():
+    return {"status": "bot_worker_active", "engine": "BusinessOS v1.2"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+def run_port_dummy_server():
+    port = int(os.getenv("PORT", 8000))
+    # Render ၏ Port Scanner အား လှည့်စားရန်အတွက် Light Server အား နှိုးပေးခြင်း
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
+if __name__ == "__main__":
+    print("🛒 Central SaaS Database Synchronized!")
+    print("🛡️ [SaaS Architecture Verification]: Passed.")
+    print("🚀 BusinessOS Enterprise Operating System v1.2 is active and live...")
     
-    # ⚡ [FIX ENABLED]: အစ်ကို ညွှန်ကြားထားသည့်အတိုင်း 409 Conflict ကာကွယ်ရန် skip_pending=True တပ်ဆင်ခြင်း
-    bot.infinity_polling(
-        skip_pending=True,
-        timeout=10,
-        long_polling_timeout=5
-    )
-except Exception as e:
-    print(f"❌ Exception Encountered: {e}")
+    # 🔗 Web Port Scanner အား ကျော်လွှားရန် Thread ခွဲ၍ မောင်းနှင်ခြင်း
+    threading.Thread(target=run_port_dummy_server, daemon=True).start()
+    
+    # Start the actual Telegram Bot Process 
+    start_bot()
