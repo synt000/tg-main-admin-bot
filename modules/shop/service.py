@@ -3,7 +3,7 @@ from core.database import get_db_connection
 from modules.shop.repository import ShopRepository
 
 class ShopService:
-    # 👥 Phase 1: Customer Management Business Services
+    # 👥 Phase 1: Customer Services
     @staticmethod
     def register_customer(biz_id, name, phone, address):
         return ShopRepository.db_register_customer(biz_id, name, phone, address)
@@ -16,7 +16,22 @@ class ShopService:
     def remove_customer(biz_id, phone):
         return ShopRepository.db_delete_customer(biz_id, phone)
 
-    # 📦 Inventory, Stock & Order Lifecycle Management
+    # 📋 Phase 2: Order History & Tracking Lifecycle Services
+    @staticmethod
+    def track_order_status(biz_id, order_id):
+        return ShopRepository.db_get_order_details(biz_id, order_id)
+
+    @staticmethod
+    def transition_order_status(biz_id, order_id, next_status):
+        # Pending ➔ Confirm ➔ Delivered ➔ Cancelled Dynamic Transition
+        return ShopRepository.db_update_order_status(biz_id, order_id, next_status)
+
+    @staticmethod
+    def refund_and_cancel_order(biz_id, order_id):
+        # Refund/Cancel Logic Wrapper
+        return ShopRepository.db_process_order_refund(biz_id, order_id)
+
+    # 📦 Inventory & Enterprise Orders Base
     @staticmethod
     def create_product(biz_id, name, count, price, barcode=None):
         conn = get_db_connection(); cur = conn.cursor()
@@ -55,13 +70,6 @@ class ShopService:
     @staticmethod
     def process_customer_order(biz_id, prod_id, customer_id, buy_count, payment_method="KBZPay"):
         return ShopService.create_enterprise_order(biz_id, prod_id, customer_id, buy_count, payment_method)
-
-    @staticmethod
-    def list_products(biz_id):
-        conn = get_db_connection(); cur = conn.cursor()
-        cur.execute("SELECT product_name, stock_count FROM products WHERE business_id = %s;", (biz_id,))
-        rows = cur.fetchall(); cur.close(); conn.close()
-        return rows
 
     @staticmethod
     def get_shop_analytics(biz_id):

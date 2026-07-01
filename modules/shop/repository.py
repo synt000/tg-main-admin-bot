@@ -1,7 +1,7 @@
 from core.database import get_db_connection
 
 class ShopRepository:
-    # 👥 Phase 1: Customer CRUD Engine
+    # 👥 Phase 1: Customer CRUD
     @staticmethod
     def db_register_customer(biz_id, name, phone, address):
         conn = get_db_connection(); cur = conn.cursor()
@@ -23,11 +23,26 @@ class ShopRepository:
         conn.commit(); cur.close(); conn.close()
         return True
 
-    # 🧾 Orders Status & Timelines
+    # 📋 Phase 2: Order History & Dynamic Tracking Core (Pending / Confirm / Delivered / Cancelled)
+    @staticmethod
+    def db_get_order_details(biz_id, order_id):
+        conn = get_db_connection(); cur = conn.cursor()
+        cur.execute("SELECT order_id, total_amount, delivery_status, created_at FROM orders WHERE order_id = %s AND business_id = %s;", (order_id, biz_id))
+        row = cur.fetchone(); cur.close(); conn.close()
+        return row
+
     @staticmethod
     def db_update_order_status(biz_id, order_id, new_status):
         conn = get_db_connection(); cur = conn.cursor()
         cur.execute("UPDATE orders SET delivery_status = %s WHERE order_id = %s AND business_id = %s;", (new_status, order_id, biz_id))
+        conn.commit(); cur.close(); conn.close()
+        return True
+
+    @staticmethod
+    def db_process_order_refund(biz_id, order_id):
+        conn = get_db_connection(); cur = conn.cursor()
+        # Order ကို Cancelled အဆင့်သို့ ပြောင်းလဲခြင်း
+        cur.execute("UPDATE orders SET delivery_status = 'Cancelled' WHERE order_id = %s AND business_id = %s;", (order_id, biz_id))
         conn.commit(); cur.close(); conn.close()
         return True
 
