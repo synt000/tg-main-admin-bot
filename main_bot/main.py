@@ -2,7 +2,6 @@ import os, sys, telebot
 from dotenv import load_dotenv
 from telebot import apihelper
 
-# 🛠️ အစ်ကို ညွှန်ကြားထားသည့်အတိုင်း .env Path အား စိတ်အချရဆုံး Absolute Path အဖြစ် တိတိကျကျ သတ်မှတ်ခြင်း
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 load_dotenv(os.path.join(base_dir, ".env"))
 
@@ -16,22 +15,24 @@ if not BOT_TOKEN:
 apihelper.ENABLE_MIDDLEWARE = True
 bot = telebot.TeleBot(BOT_TOKEN, threaded=False)
 
-# 🏢 CONNECT MIDDLEWARES PIPELINE (တံခါးစောင့်စနစ် Middleware)
+# 🏢 CONNECT MIDDLEWARES PIPELINE (တံခါးစောင့်စနစ် Middleware Logic မှန်ကန်စွာ ပြုပြင်ခြင်း)
 from middlewares.license_gate import LicenseMiddleware
 
 @bot.middleware_handler(update_types=['message', 'callback_query'])
 def run_business_os_middlewares(bot_instance, update):
     uid = None
-    if update.message: 
-        uid = str(update.message.from_user.id)
-    elif update.callback_query: 
-        uid = str(update.callback_query.from_user.id)
+    # 💡 FIX: update ထဲတွင် message/callback_query က တိုက်ရိုက် object အဖြစ် ဝင်လာခြင်းကို စစ်ဆေးခြင်း
+    if isinstance(update, telebot.types.Message):
+        uid = str(update.from_user.id)
+    elif isinstance(update, telebot.types.CallbackQuery):
+        uid = str(update.from_user.id)
     
     if uid:
+        # Flow 1: ⏳ License Check (၃ ရက် Trial ကုန်ဆုံးမှု စစ်ဆေးခြင်း)
         is_licensed = LicenseMiddleware.verify_tenant_access(uid)
         if not is_licensed:
-            if update.message:
-                bot_instance.send_message(update.message.chat.id, "🔒 **[Access Denied]**: Trial Expired. Please register valid license key.")
+            if isinstance(update, telebot.types.Message):
+                bot_instance.send_message(update.chat.id, "🔒 **[Access Denied]**: Trial Expired. Please register valid license key.")
             return False
             
     return True
