@@ -6,3 +6,147 @@ ImportError: cannot import name 'bot' from 'main_bot.main' (/data/data/com.termu
 From https://github.com/synt000/tg-main-admin-bot
  * branch            main       -> FETCH_HEAD
 Already up to date.
+2026-07-01 13:20:20,887 (__init__.py:1141 MainThread) ERROR - TeleBot: "Infinity polling exception: HTTPSConnectionPool(host='api.telegram.org', port=443): Read timed out. (read timeout=10)"
+2026-07-01 13:20:20,986 (__init__.py:1143 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+  File "/data/data/com.termux/files/usr/lib/python3.13/http/client.py", line 1450, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/http/client.py", line 336, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/http/client.py", line 297, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/ssl.py", line 1304, in recv_into
+    return self.read(nbytes, buffer)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/ssl.py", line 1138, in read
+    return self._sslobj.read(len, buffer)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/requests/adapters.py", line 696, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/urllib3/connectionpool.py", line 842, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/urllib3/util/retry.py", line 498, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/urllib3/util/util.py", line 39, in reraise
+    raise value
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/urllib3/connectionpool.py", line 788, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/urllib3/connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/urllib3/connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+        self, url, f"Read timed out. (read timeout={timeout_value})"
+    ) from err
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.telegram.org', port=443): Read timed out. (read timeout=10)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/telebot/__init__.py", line 1136, in infinity_polling
+    self.polling(non_stop=True, timeout=timeout, long_polling_timeout=long_polling_timeout,
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 logger_level=logger_level, allowed_updates=allowed_updates, restart_on_change=False,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 *args, **kwargs)
+                 ^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/telebot/__init__.py", line 1227, in polling
+    self.__non_threaded_polling(non_stop=non_stop, interval=interval, timeout=timeout, long_polling_timeout=long_polling_timeout,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                logger_level=logger_level, allowed_updates=allowed_updates)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/telebot/__init__.py", line 1353, in __non_threaded_polling
+    raise e
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/telebot/__init__.py", line 1325, in __non_threaded_polling
+    self.__retrieve_updates(timeout, long_polling_timeout, allowed_updates=allowed_updates)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/telebot/__init__.py", line 690, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+                               allowed_updates=allowed_updates,
+                               timeout=timeout, long_polling_timeout=long_polling_timeout)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/telebot/__init__.py", line 662, in get_updates
+    json_updates = apihelper.get_updates(
+        self.token, offset=offset, limit=limit, timeout=timeout, allowed_updates=allowed_updates,
+        long_polling_timeout=long_polling_timeout)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/telebot/apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/telebot/apihelper.py", line 162, in _make_request
+    result = _get_req_session().request(
+        method, request_url, params=params, files=files,
+        timeout=(connect_timeout, read_timeout), proxies=proxy)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/requests/sessions.py", line 651, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/requests/sessions.py", line 784, in send
+    r = adapter.send(request, **kwargs)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/requests/adapters.py", line 742, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.telegram.org', port=443): Read timed out. (read timeout=10)
+"
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
