@@ -8,7 +8,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN not found in .env")
 bot = telebot.TeleBot(BOT_TOKEN, threaded=False)
 
-# 🏢 REFACTOR CORES REGISTER (Handlers များနှင့် Callbacks များကို သက်ဆိုင်ရာဖိုင်ခွဲများဆီသို့ လမ်းကြောင်းလွှဲခြင်း)
+# 🏢 REFACTOR CORES: HANDLERS & CALLBACKS REGISTRY
 from main_bot.handlers.home import register_home_handlers
 from main_bot.callbacks.home import register_home_callbacks
 
@@ -16,4 +16,4 @@ register_home_handlers(bot)
 register_home_callbacks(bot)
 
 if __name__ == "__main__":
-    print("🚀 BusinessOS main_bot Router Hub Active...")
+    print("🚀 BusinessOS main_bot Dynamic Router Engine Online...")
