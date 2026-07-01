@@ -1,29 +1,23 @@
 import sys, os, traceback
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from modules.billing.service import BillingService
+from tests.security.test_security import test_rbac_logic
+from tests.billing.test_billing import test_billing_logic
 
-def test_production_payment_architecture_flow():
-    print("🧪 [Production Payment Verification]: Executing Webhook Security & Idempotency Tests...")
-    biz_id = "MOCK_ENTERPRISE_MERCHANT"
-    mock_ref = "TXN_REF_STABLE_999"
-    
+def run_comprehensive_production_stabilization_tests():
+    print("🧪 [SaaS Stabilization Validation]: Initiating Module-Based Testing Studio...")
     try:
-        # 1. Verification 1: Valid Webhook Flow & Activation (Server-Side Verification)
-        success, msg = BillingService.process_verified_payment_webhook(biz_id, "PRO", "Stripe", mock_ref, 15000)
-        assert success is True
-        print(f"✅ [1/2] Server-Side Webhook Verification & Plan Unlock: PASS ({msg})")
+        # 1. Trigger Isolated Security Unit Test
+        test_rbac_logic()
         
-        # 2. Verification 2: Idempotency Protection Check (Should block the duplicate transaction reference)
-        dup_success, dup_msg = BillingService.process_verified_payment_webhook(biz_id, "PRO", "Stripe", mock_ref, 15000)
-        assert dup_success is False
-        print(f"✅ [2/2] Webhook Idempotency Protection Guard (Duplicate Blocked: {dup_msg}): PASS")
+        # 2. Trigger Isolated Billing Unit Test
+        test_billing_logic()
         
-        print("\n🏆 [PRODUCTION PAYMENT STATUS]: PAYMENT INTERFACE LAYER IS 100% SECURE & COMMERCIAL READY! 💳🌐☁️🚀⭐⭐⭐⭐⭐\nPAYMENT LAYER PASS")
+        print("\n🏆 [STABILIZATION STATUS]: MULTI-MODULE TESTS COMPLETED & VERIFIED 100% STABLE! 🚀⭐⭐⭐⭐⭐")
         return True
     except Exception:
-        print("❌ [CRITICAL PAYMENT REFACTOR ERROR LOGGED VIA TRACEBACK]:")
+        print("❌ [CRITICAL TESTING ERROR LOGGED IN MODULE MATRIX]:")
         traceback.print_exc()
         return False
 
 if __name__ == "__main__":
-    test_production_payment_architecture_flow()
+    run_comprehensive_production_stabilization_tests()
