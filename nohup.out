@@ -3,3 +3,6 @@ Traceback (most recent call last):
   File "/data/data/com.termux/files/home/tg-main-admin-bot/run.py", line 13, in <module>
     from main_bot.main import bot as main_bot
 ImportError: cannot import name 'bot' from 'main_bot.main' (/data/data/com.termux/files/home/tg-main-admin-bot/main_bot/main.py)
+From https://github.com/synt000/tg-main-admin-bot
+ * branch            main       -> FETCH_HEAD
+Already up to date.
