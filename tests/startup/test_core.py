@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, traceback
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from config.settings import AppConfig
 from core.database import get_db_connection
@@ -45,8 +45,10 @@ def run_sprint_b_order_lifecycle_tests():
         
         print("\n🏆 [SPRINT B - PHASE 2]: ORDER HISTORY & TRACKING IS 100% VERIFIED PASS! ⭐⭐⭐⭐⭐")
         return True
-    except Exception as e:
-        print(f"❌ [CRITICAL TESTING ERROR]: Order Matrix Broken: {e}")
+    except Exception:
+        # 🚨 အစ်ကို ညွှန်ကြားထားသည့်အတိုင်း အမှားဇစ်မြစ်တစ်ခုလုံးကို Stack Trace အပြည့်အစုံ ထုတ်ပြခြင်း
+        print("❌ [CRITICAL TESTING ERROR LOGGED VIA TRACEBACK]:")
+        traceback.print_exc()
         return False
 
 if __name__ == "__main__":
