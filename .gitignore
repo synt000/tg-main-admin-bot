@@ -1,5 +1,9 @@
-.env
-__pycache__/
+*.bak
 *.pyc
+.env
+nohup.out
+database.db
+business.db
+__pycache__/
 logs/
 backups/
