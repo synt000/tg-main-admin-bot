@@ -11,7 +11,7 @@ if not BOT_TOKEN:
     raise RuntimeError("CRITICAL: BOT_TOKEN not found in environment settings.")
 
 apihelper.ENABLE_MIDDLEWARE = True
-bot = telebot.TeleBot(BOT_TOKEN, threaded=False)
+bot = telebot.TeleBot(BOT_TOKEN, threaded=True)
 
 from middlewares.license_gate import LicenseMiddleware
 

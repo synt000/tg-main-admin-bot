@@ -1,12 +1,15 @@
 import sys
 import os
+from core.database import init_connection_pool
 
 if __name__ == "__main__":
+    # 🔌 🚀 [POOL COUPLING ACTIVE]: Bot စဖွင့်ကတည်းက ကမ္ဘာ့ဆာဗာဆီသို့ ကွန်နက်ရှင်ထုပ် ကြိုဆောက်ထားခြင်း
+    init_connection_pool()
+    
     print("🛒 Central SaaS Database Synchronized!")
     print("🛡️ [SaaS Architecture Verification]: Passed.")
     print("🚀 BusinessOS Enterprise Operating System v1.2 [Bot Process Active]...")
     
-    # 🛡️ [PROCESS ISOLATION ACTIVE]: Local Termux တွင် FastAPI/Uvicorn လုံးဝမခေါ်ဘဲ Bot Core သီးသန့်နှိုးခြင်း
     try:
         from main_bot.main import run_bot
         run_bot()
