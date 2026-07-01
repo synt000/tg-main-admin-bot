@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BusinessOS v1.1 Web Admin Panel</title>
+    <link rel="stylesheet" href="https://jsdelivr.net">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="card shadow-sm p-4 bg-white">
+            <h2 class="text-primary border-bottom pb-3">🏪 BusinessOS Enterprise SaaS Dashboard [Tenant: {{ biz_id }}]</h2>
+            <div class="row mt-4">
+                <div class="col-md-4"><div class="p-3 bg-info text-white rounded"><h5>👥 Total Customers</h5><h3>{{ total_customers }}</h3></div></div>
+                <div class="col-md-4"><div class="p-3 bg-success text-white rounded"><h5>💰 Total Revenue</h5><h3>{{ "{:,}".format(revenue) }} Ks</h3></div></div>
+                <div class="col-md-4"><div class="p-3 bg-warning text-white rounded"><h5>🎯 Loyalty Pool</h5><h3>{{ total_points }} Points</h3></div></div>
+            </div>
+            <h4 class="mt-5 text-secondary">👑 VIP Customer Leaderboard</h4>
+            <table class="table table-striped mt-2">
+                <thead><tr><th>Customer ID</th><th>Name</th><th>Total Spent</th><th>Tier</th></tr></thead>
+                <tbody>
+                    {% for vip in top_vips %}
+                    <tr><td>{{ vip[0] }}</td><td>{{ vip[1] }}</td><td>{{ "{:,}".format(vip[2]) }} Ks</td><td><span class="badge bg-danger">{{ vip[3] }}</span></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

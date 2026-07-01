@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 from modules.crm.dashboard import CRMDashboard
 from modules.ai.assistant import BusinessAI
+from web_admin.router import admin_router
 
-app = FastAPI(title="BusinessOS Enterprise SaaS Dashboard API", version="1.0")
+app = FastAPI(title="BusinessOS Enterprise SaaS Dashboard API", version="1.1")
+
+# 🔗 🌐 [WEB ADMIN PANEL INTEGRATION]: Version 1.1 Router အား ပင်မအူတိုင်ထဲသို့ ချိတ်ဆက်ခြင်း
+app.include_router(admin_router)
 
 @app.get("/business/{biz_id}/summary")
 def summary(biz_id: str):
