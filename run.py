@@ -1,8 +1,8 @@
 import os
+import sys
 import threading
 import uvicorn
 from fastapi import FastAPI
-from main_bot.main import start_bot
 
 # 🛡️ Render Port Scan Bypass Guard Layer
 app = FastAPI()
@@ -28,5 +28,14 @@ if __name__ == "__main__":
     # 🔗 Web Port Scanner အား ကျော်လွှားရန် Thread ခွဲ၍ မောင်းနှင်ခြင်း
     threading.Thread(target=run_port_dummy_server, daemon=True).start()
     
-    # Start the actual Telegram Bot Process 
-    start_bot()
+    # Dynamic Function Hook Execution: run_bot သို့မဟုတ် main နှစ်မျိုးစလုံးကို Safe ဖြစ်အောင် ခေါ်ယူခြင်း
+    try:
+        from main_bot.main import run_bot
+        run_bot()
+    except ImportError:
+        try:
+            from main_bot.main import main as main_bot_entry
+            main_bot_entry()
+        except Exception as e:
+            print(f"❌ [CRITICAL LOG]: Bot entry handler mismatch. Details: {e}")
+            sys.exit(1)
