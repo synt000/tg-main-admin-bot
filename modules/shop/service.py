@@ -41,6 +41,11 @@ class ShopService:
         
         return {"order_id": order_id, "product_name": prod['product_name'], "buy_count": buy_count, "total_amount": total_amount, "remaining_stock": new_stock, "payment": payment_method}, "Success"
 
+    # 🔗 🔄 [COMPATIBILITY WRAPPER]: အစ်ကို လမ်းညွှန်ထားသည့် အဟောင်းနှင့်အသစ်ပါ ချောမွေ့စေမည့် စနစ်
+    @staticmethod
+    def process_customer_order(biz_id, prod_id, customer_id, buy_count, payment_method="KBZPay"):
+        return ShopService.create_enterprise_order(biz_id, prod_id, customer_id, buy_count, payment_method)
+
     @staticmethod
     def list_products(biz_id):
         conn = get_db_connection(); cur = conn.cursor()
