@@ -5,10 +5,26 @@ class CRMService:
     def create_customer(biz_id, name, phone):
         conn = get_db_connection()
         cur = conn.cursor()
+
+        # 🚀 🔒 [FIX APPLIED]: အစ်ကို ညွှန်ကြားထားသည့် Option A (Check Existing First) သံမဏိခံစစ်တံတိုင်း
+        cur.execute("""
+            SELECT customer_id FROM customers
+            WHERE business_id=%s AND phone=%s;
+        """, (biz_id, phone))
+        exists = cur.fetchone()
+
+        if exists:
+            cur.close()
+            conn.close()
+            # Tuple Type Safe Check
+            try: return exists['customer_id']
+            except: return exists[0]
+
         cur.execute("""
             INSERT INTO customers (business_id, name, phone)
-            VALUES (%s, %s, %s)
+            VALUES (%s, %s, %s);
         """, (biz_id, name, phone))
+
         conn.commit()
         cur.close()
         conn.close()
@@ -21,7 +37,7 @@ class CRMService:
         cur.execute("""
             SELECT customer_id, name, phone, total_spent, loyalty_points
             FROM customers
-            WHERE business_id=%s AND customer_id=%s
+            WHERE business_id=%s AND customer_id=%s;
         """, (biz_id, customer_id))
         data = cur.fetchone()
         cur.close()
@@ -35,7 +51,7 @@ class CRMService:
         cur.execute("""
             INSERT INTO customer_activity
             (customer_id, business_id, module, action, amount)
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s);
         """, (customer_id, biz_id, module, action, amount))
         conn.commit()
         cur.close()
