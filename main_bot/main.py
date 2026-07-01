@@ -46,7 +46,8 @@ def run_bot():
     bot.infinity_polling(
         skip_pending=True,
         timeout=10,
-        long_polling_timeout=5
+        long_polling_timeout=5,
+        none_stop=True
     )
 
 def main():
