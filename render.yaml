@@ -1,10 +1,20 @@
 services:
+  # 🌐 1️⃣ [WEB SERVICE] - FastAPI Web Admin Dashboard & API Gateway
   - type: web
-    name: tg-saas-operating-system
+    name: tg-saas-web-dashboard
     runtime: python
     buildCommand: "pip install --no-cache-dir -r requirements.txt"
-    # 🔗 🌐 [CLOUD API GATEWAY]: FastAPI အား Uvicorn ဖြင့် Cloud Web Proxy ချိတ်ဆက်ခြင်း
     startCommand: "uvicorn dashboard.app:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.4
+
+  # 🤖 2️⃣ [BACKGROUND WORKER] - Telegram Bot Infinity Polling Engine
+  - type: worker
+    name: tg-saas-bot-worker
+    runtime: python
+    buildCommand: "pip install --no-cache-dir -r requirements.txt"
+    startCommand: "python run.py"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.4
