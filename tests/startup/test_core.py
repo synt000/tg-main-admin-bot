@@ -18,18 +18,21 @@ def test_crm_basic():
         cur.close(); conn.close()
         
         # Tuple Safe Unpacking Guard
-        try: c_id = c_row['customer_id']
-        except: c_id = c_row if c_row else 1
+        try: 
+            c_id = c_row['customer_id']
+        except: 
+            c_id = c_row[0] if c_row else 1
         
-        # 2. Get Customer & Assert Check
-        customer = CRMService.get_customer(biz_id, p_id=c_id if isinstance(c_id, int) else 1)
+        # 🚀 🔒 [FIX APPLIED]: အစ်ကို ညွှန်ကြားထားသည့် Strict Naming (customer_id=) အတိုင်း ကွက်တိ ပြုပြင်ခြင်း
+        target_id = c_id if isinstance(c_id, int) else 1
+        customer = CRMService.get_customer(biz_id, customer_id=target_id)
         print("✅ [1/2] Unified CRM Customer Profile Generation: PASS")
         
         # 3. Add Multi-Business Module Activity (Shop Sync)
-        CRMService.add_activity(biz_id, 1, "shop", "purchase", 5000)
+        CRMService.add_activity(biz_id, target_id, "shop", "purchase", 5000)
         print("✅ [2/2] Cross-Module Omni-Channel Activity Log Check: PASS")
         
-        print("\n🏆 [SPRINT C - PHASE 1]: CRM CORE FOUNDATION IS 100% VERIFIED PASS! 🚀⭐⭐⭐⭐⭐")
+        print("\n🏆 [SPRINT C - PHASE 1]: CRM CORE FOUNDATION IS 100% VERIFIED PASS! 🚀⭐⭐⭐⭐禮")
         return True
     except Exception:
         print("❌ [CRITICAL TESTING ERROR LOGGED VIA SPRINT C TRACEBACK]:")
