@@ -1,67 +1,89 @@
-from core.database import get_db_connection
+import sys, os
+from datetime import datetime
+from fastapi import HTTPException, status
+from core.database import get_db_connection, release_db_connection
 
 class CRMDashboard:
+    # 🚀 📊 [SOLID LIVE ANALYTICS ENGINE ACTIVE]: Mock အဟောင်းများအား ရာနှုန်းပြည့်ဖယ်ရှား၍ Live DB Queries ဖြင့် တည်ဆောက်ခြင်း
     @staticmethod
-    def get_customer_profile(biz_id, customer_id):
+    def get_enterprise_global_analytics(business_id: str = None) -> dict:
         conn = get_db_connection()
         cur = conn.cursor()
+        
+        # Capture precise timestamp limits dynamically for today's automated revenue auditing
+        today_date_str = datetime.now().strftime("%Y-%m-%d")
+        
+        try:
+            # 🎯 1. Dynamic Merchant Count from tenants table safely
+            cur.execute("SELECT COALESCE(COUNT(*), 0) FROM tenants;")
+            total_merchants = cur.fetchone()[0] if hasattr(cur, "fetchone") else 0
 
-        cur.execute("""
-            SELECT customer_id, name, phone, total_spent, loyalty_points, tier
-            FROM customers
-            WHERE business_id=%s AND customer_id=%s;
-        """, (biz_id, customer_id))
-        customer = cur.fetchone()
+            # 🎯 2. Dynamic Customer Count from customers table safely
+            if business_id:
+                cur.execute("SELECT COALESCE(COUNT(*), 0) FROM customers WHERE business_id = %s;", (business_id,))
+            else:
+                cur.execute("SELECT COALESCE(COUNT(*), 0) FROM customers;")
+            total_customers = cur.fetchone()[0] if hasattr(cur, "fetchone") else 0
 
-        cur.execute("""
-            SELECT module, action, amount, created_at
-            FROM customer_activity
-            WHERE business_id=%s AND customer_id=%s
-            ORDER BY created_at DESC;
-        """, (biz_id, customer_id))
-        activity = cur.fetchall()
+            # 🎯 3. Dynamic Active Subscriptions counting boundaries
+            cur.execute("SELECT COALESCE(COUNT(*), 0) FROM subscriptions WHERE status = %s;", ("active",))
+            active_subscriptions = cur.fetchone()[0] if hasattr(cur, "fetchone") else 0
 
-        cur.close()
-        conn.close()
+            # 🎯 4. Dynamic Order Statistics transaction records counts
+            if business_id:
+                cur.execute("SELECT COALESCE(COUNT(*), 0) FROM orders WHERE business_id = %s;", (business_id,))
+            else:
+                cur.execute("SELECT COALESCE(COUNT(*), 0) FROM orders;")
+            total_orders_count = cur.fetchone()[0] if hasattr(cur, "fetchone") else 0
 
-        return {
-            "profile": customer,
-            "activity_timeline": activity
-        }
+            # 🎯 5. Dynamic Total Revenue parameter computation from transactional layers
+            if business_id:
+                cur.execute("""
+                    SELECT COALESCE(SUM(amount), 0.00) 
+                    FROM payment_transactions 
+                    WHERE status = %s AND business_id = %s;
+                """, ("success", business_id))
+            else:
+                cur.execute("SELECT COALESCE(SUM(amount), 0.00) FROM payment_transactions WHERE status = %s;", ("success",))
+            total_revenue = float(cur.fetchone()[0]) if hasattr(cur, "fetchone") else 0.00
 
-    @staticmethod
-    def get_top_customers(biz_id, limit=5):
-        conn = get_db_connection()
-        cur = conn.cursor()
+            # 🎯 6. Dynamic Today's Revenue parameters checking securely via Parameterized constraints
+            if business_id:
+                cur.execute("""
+                    SELECT COALESCE(SUM(amount), 0.00) 
+                    FROM payment_transactions 
+                    WHERE status = %s AND business_id = %s AND created_at::text LIKE %s;
+                """, ("success", business_id, f"{today_date_str}%"))
+            else:
+                cur.execute("""
+                    SELECT COALESCE(SUM(amount), 0.00) 
+                    FROM payment_transactions 
+                    WHERE status = %s AND created_at::text LIKE %s;
+                """, ("success", f"{today_date_str}%"))
+            today_revenue = float(cur.fetchone()[0]) if hasattr(cur, "fetchone") else 0.00
 
-        cur.execute("""
-            SELECT customer_id, name, total_spent, tier
-            FROM customers
-            WHERE business_id=%s
-            ORDER BY total_spent DESC
-            LIMIT %s;
-        """, (biz_id, limit))
-        rows = cur.fetchall()
+            # Clean transaction connections layers context cleanly prior to release locks
+            cur.close()
+            release_db_connection(conn)
 
-        cur.close()
-        conn.close()
-        return rows
+            # Compile and dispatch final explicit unified architecture payload specification
+            return {
+                "status": "success",
+                "metrics": {
+                    "total_merchants": int(total_merchants),
+                    "total_customers": int(total_customers),
+                    "active_subscriptions": int(active_subscriptions),
+                    "total_orders_count": int(total_orders_count),
+                    "total_revenue_mmk": float(total_revenue),
+                    "today_revenue_mmk": float(today_revenue)
+                },
+                "version": "1.2.0"
+            }
 
-    @staticmethod
-    def get_business_summary(biz_id):
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        cur.execute("""
-            SELECT
-                COUNT(*) as total_customers,
-                COALESCE(SUM(total_spent), 0) as revenue,
-                COALESCE(SUM(loyalty_points), 0) as total_points
-            FROM customers
-            WHERE business_id=%s;
-        """, (biz_id,))
-        summary = cur.fetchone()
-
-        cur.close()
-        conn.close()
-        return summary
+        except Exception as query_fault_ex:
+            if 'cur' in locals(): cur.close()
+            if 'conn' in locals(): release_db_connection(conn)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Live Analytical transactional data compilation failed: {str(query_fault_ex)}"
+            )
