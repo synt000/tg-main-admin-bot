@@ -11,7 +11,7 @@ if not BOT_TOKEN:
     raise RuntimeError("CRITICAL: BOT_TOKEN not found in environment settings.")
 
 apihelper.ENABLE_MIDDLEWARE = True
-bot = telebot.TeleBot(BOT_TOKEN, threaded=False)
+bot = telebot.TeleBot(BOT_TOKEN, threaded=True)
 
 from middlewares.license_gate import LicenseMiddleware
 
@@ -39,3 +39,20 @@ register_home_callbacks(bot)
 
 if __name__ == "__main__":
     print("🚀 BusinessOS Multi-Layer Middleware Router Engine Online...")
+
+# 🚀 🔒 [FIX APPLIED]: အစ်ကို ညွှန်ကြားထားသည့် စံနှုန်းအတိုင်း run_bot() နှင့် main() Entry Points များအား တိုက်ရိုက်ဖြည့်စွက်ခြင်း
+def run_bot():
+    print("🤖 Telegram Bot Polling Started...")
+    bot.infinity_polling(
+        skip_pending=True,
+        timeout=10,
+        long_polling_timeout=5,
+        none_stop=True
+    )
+
+def main():
+    run_bot()
+
+if __name__ == "__main__":
+    print("🚀 BusinessOS Multi-Layer Middleware Router Engine Online...")
+    run_bot()
